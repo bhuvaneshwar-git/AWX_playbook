@@ -1,6 +1,6 @@
 ---
 - name: Set and lock GNOME wallpaper system-wide (Enterprise-Safe)
-  hosts: 192.168.2.111, 192.168.2.129
+  hosts: 192.168.2.111
   become: yes
 
   vars:
