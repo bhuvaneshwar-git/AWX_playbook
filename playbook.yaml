@@ -1,6 +1,6 @@
 ---
 - name: My First Play
-  hosts: 192.168.2.111
+  hosts: 192.168.2.111, 192.168.2.129
 
   tasks:
     - name: Ping my hosts
