@@ -25,3 +25,7 @@
           System Vendor: {{ ansible_system_vendor }}
           Product Name: {{ ansible_product_name }}
           =================================
+    - name: Export system info as JSON artifact
+      ansible.builtin.set_stats:
+        data:
+          system_report: "{{ system_info | to_nice_json }}"
