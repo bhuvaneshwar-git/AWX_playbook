@@ -52,6 +52,7 @@
         owner: root
         group: root
         mode: '0644'
+        become_user: root
 
     # -------------------------
     # 4. Lock wallpaper settings so users cannot change
