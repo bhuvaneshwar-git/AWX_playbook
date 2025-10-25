@@ -72,6 +72,7 @@
     - name: Update dconf database
       ansible.builtin.command: dconf update
       become: yes
+      become_user: root
 
 
 
