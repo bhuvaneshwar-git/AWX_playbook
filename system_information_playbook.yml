@@ -1,6 +1,6 @@
 ---
 - name: Gather system information
-  hosts: all
+  hosts: 192.168.2.111
   gather_facts: yes   # This automatically runs the setup module
   become: yes
   become_user: root
