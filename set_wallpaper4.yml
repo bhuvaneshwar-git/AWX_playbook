@@ -43,6 +43,8 @@
     # 3. Define system-wide wallpaper defaults
     # -------------------------
     - name: Create GNOME system-wide wallpaper config
+      become: yes
+      become_user: root
       ansible.builtin.copy:
         dest: "{{ dconf_dir }}/{{ dconf_file }}"
         content: |
@@ -53,7 +55,7 @@
         owner: root
         group: root
         mode: '0644'
-        become_user: root
+  
 
     # -------------------------
     # 4. Lock wallpaper settings so users cannot change
