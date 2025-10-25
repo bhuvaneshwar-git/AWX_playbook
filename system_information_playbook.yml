@@ -1,16 +1,11 @@
 ---
 - name: Gather system information
   hosts: all
-  gather_facts: yes   # This automatically runs the setup module
+  gather_facts: yes
   become: yes
-  become_user: root
 
   tasks:
-    - name: Show current logged-in user
-      ansible.builtin.command: whoami
-      register: current_user
-
-    - name: Display system information
+    - name: Show system info in human-readable format
       ansible.builtin.debug:
         msg: |
           ===== System Information =====
@@ -18,11 +13,8 @@
           OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
           Kernel: {{ ansible_kernel }}
           Architecture: {{ ansible_architecture }}
-          CPU Model: {{ ansible_processor[1] }}
-          Total RAM: {{ ansible_memtotal_mb }} MB
-          Storage (root fs): {{ ansible_mounts[0].size_total | human_readable }}
-          Current User: {{ current_user.stdout }}
-          System Vendor: {{ ansible_system_vendor }}
-          Product Name: {{ ansible_product_name }}
+          CPU: {{ ansible_processor[1] | regex_replace('.*Intel.*', 'Intel') | regex_replace('.*AMD.*', 'AMD') }}
+          RAM: {{ (ansible_memtotal_mb / 1024) | round(0) }} GB
+          Storage: {{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }} GB
+          Current User: {{ lookup('env', 'USER') }}
           =================================
-
