@@ -6,7 +6,7 @@
 
   vars:
     wallpaper_source: "wallpaper.jpg"       # Path inside in our Ansible project
-    wallpaper_dest: "/usr/share/backgrounds/custom_wallpaper.jpg"
+    wallpaper_dest: "/usr/share/backgrounds/company_wallpaper.jpg"
     dconf_dir: "/etc/dconf/db/local.d"
     dconf_file: "00-wallpaper"
     dconf_lock_dir: "/etc/dconf/db/local.d/locks"
