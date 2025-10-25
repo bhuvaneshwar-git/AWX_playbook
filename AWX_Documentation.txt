@@ -1,0 +1,84 @@
+Awx Documentation
+
+AWX Operators( Anisble AWx ) via kuberenetes 
+Official Documentation - https://ansible.readthedocs.io/projects/awx-operator/en/latest/installation/basic-install.html
+
+Prerequisites - 
+1) Kubernetes cluster ( minikube, kind, or k3s )
+2) kubectl 
+3)git
+---------------------------------------------------------------------------
+
+1) Install kuberenetes 
+
+step 1 - # Install minikube
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+step 2 - # Start cluster
+minikube start --cpus=4 --memory=8g
+
+step 3 - # Verify
+kubectl get nodes
+
+Note - minikube status is ready
+
+2) Install kubectl
+
+step 4 - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+kubectl version --client
+
+3) Deploy AWX operator
+
+step 5 - # Clone operator repo
+git clone https://github.com/ansible/awx-operator.git
+cd awx-operator
+
+step 6 -# Create namespace
+kubectl create ns awx
+
+step 7 - # Deploy operator
+make deploy NAMESPACE=awx
+
+step 8 - kubectl get pods -n awx
+
+note - check the awx-operator-controller-manager is running 
+
+4) Deploy AWX
+
+step 9 - Create a file awx-deploy.yaml:
+apiVersion: awx.ansible.com/v1beta1
+kind: AWX
+metadata:
+  name: awx
+  namespace: awx
+spec:
+  service_type: NodePort
+  ingress_type: none
+
+step 10 - run the command - kubectl apply -f awx-deploy.yaml
+
+5) Verify Pods
+
+step 11 - kubectl get pods -n awx
+
+Access AWX in browser
+
+step 12 - kubectl get svc -n awx
+
+step 13 - minikubeip: node port ex - 192.168.49.2:80
+
+if it is not worked
+
+step 13 - #Port forwarding 
+kubectl port-forward svc/awx-service -n awx 8080:80 ( access via http://localhost:8080 )
+
+step 14 - #inside the docker container
+kubectl exec -it awx-web-d4cc6f6b9-rktkp  -n awx -- bash
+
+step 15 - awx-manage changepassword admin ( enter your new password)
+
+  
+To start or stop the pods - kubectl port-forward svc/awx-service -n awx 8080:80 ( execute this commands) 
