@@ -1,40 +1,45 @@
 ---
 - name: Upgrade Google Chrome
   hosts: all
-  become: yes
   become_user: root
   gather_facts: no
+  become: yes
 
   tasks:
-    - name: Show current Chrome version
+    # 🧩 Step 1: Check current version
+    - name: Get current Chrome version (before upgrade)
       ansible.builtin.command: google-chrome --version
       register: chrome_before
       ignore_errors: yes
 
-    - name: Display current version
+    - name: Show current Chrome version
       ansible.builtin.debug:
         msg: "Current Chrome version: {{ chrome_before.stdout | default('Not Installed') }}"
 
-    # ✅ Option 2: Proper Ansible way to update and upgrade Chrome
-    - name: Update package lists
-      ansible.builtin.apt:
-        update_cache: yes
-        cache_valid_time: 3600
+    # 🔁 Step 2: Refresh apt cache + fix missing packages
+    - name: Update package cache (fix missing)
+      ansible.builtin.command: apt-get update --fix-missing
+      changed_when: false
 
-    - name: Upgrade Chrome only
-      ansible.builtin.apt:
-        name: google-chrome-stable
-        state: latest
-        only_upgrade: yes
+    # ⚙️ Step 3: Run upgrade (your original command)
+    - name: Run apt only-upgrade for Chrome
+      ansible.builtin.command: apt --only-upgrade install -y google-chrome-stable
+      register: chrome_upgrade
+      ignore_errors: yes
 
-    - name: Show updated Chrome version
+    - name: Show upgrade result
+      ansible.builtin.debug:
+        var: chrome_upgrade
+
+    # 🔄 Step 4: Check new version after upgrade
+    - name: Get updated Chrome version (after upgrade)
       ansible.builtin.command: google-chrome --version
       register: chrome_after
       ignore_errors: yes
 
-    - name: Display updated version
+    - name: Show updated Chrome version
       ansible.builtin.debug:
         msg: |
-          ✅ Chrome version upgrade complete:
+          ✅ Chrome version upgrade result:
           Before: {{ chrome_before.stdout | default('Not Installed') }}
           After:  {{ chrome_after.stdout | default('Unknown') }}
