@@ -16,11 +16,16 @@
       ansible.builtin.debug:
         msg: "Current Chrome version: {{ chrome_before.stdout | default('Not Installed') }}"
 
-    # ⚙️ Step 2: (Your exact command — untouched)
+    # 🔁 Step 2: Refresh apt cache (prevents 404 Not Found errors)
+    - name: Refresh APT cache
+      ansible.builtin.command: apt-get update
+      changed_when: false
+
+    # ⚙️ Step 3: Run upgrade (your original command — untouched)
     - name: Run apt only-upgrade for Chrome
       ansible.builtin.command: apt --only-upgrade install -y google-chrome-stable
 
-    # 🔄 Step 3: Check new version after upgrade
+    # 🔄 Step 4: Check new version after upgrade
     - name: Get updated Chrome version (after upgrade)
       ansible.builtin.command: google-chrome --version
       register: chrome_after
