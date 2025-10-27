@@ -69,7 +69,7 @@
       become: false
       ansible.builtin.copy:
         content: "{{ sysinfo | to_nice_json }}"
-        dest: "/home/ubuntu/awx_exports/system_info_{{ inventory_hostname }}_{{ export_timestamp }}.json"
+        dest: "/home/bhuvaneshwar.g/awx_exports/system_info_{{ inventory_hostname }}_{{ export_timestamp }}.json"
         mode: '0644'
 
     - name: Notify completion
