@@ -5,16 +5,24 @@
   become: yes
 
   tasks:
-    - name: Show system info in human-readable format
-      ansible.builtin.debug:
-        msg: |
-          ===== System Information =====
-          Hostname: {{ ansible_hostname }}
-          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
-          Kernel: {{ ansible_kernel }}
-          Architecture: {{ ansible_architecture }}
-          CPU: {{ ansible_processor[1] | regex_replace('.*Intel.*', 'Intel') | regex_replace('.*AMD.*', 'AMD') }}
-          RAM: {{ (ansible_memtotal_mb / 1024) | round(0) }} GB
-          Storage: {{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }} GB
-          Current User: {{ lookup('env', 'USER') }}
-          =================================
+    - name: Collect system info into a dictionary
+      set_fact:
+        sysinfo:
+          hostname: "{{ ansible_hostname }}"
+          os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
+          kernel: "{{ ansible_kernel }}"
+          architecture: "{{ ansible_architecture }}"
+          cpu: "{{ ansible_processor[1] | regex_replace('.*Intel.*', 'Intel') | regex_replace('.*AMD.*', 'AMD') }}"
+          ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(0) }}"
+          storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }}"
+          current_user: "{{ lookup('env', 'USER') }}"
+
+    - name: Save JSON output to AWX artifacts directory
+      copy:
+        content: "{{ sysinfo | to_nice_json }}"
+        dest: "/runner/artifacts/system_info_{{ inventory_hostname }}.json"
+        mode: '0644'
+
+    - name: Notify admin
+      debug:
+        msg: "System information has been exported to job Artifacts."
