@@ -2,7 +2,7 @@
 - name: Gather system information
   hosts: all
   gather_facts: yes
-  become: yes
+  become_user: root
 
   vars:
     export_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H-%M-%S') }}"
