@@ -31,26 +31,25 @@
           Current User: {{ sysinfo.current_user }}
           =================================
 
-    # ✅ Ensure the artifacts directory exists on the controller
+    # ✅ Create artifacts directory safely relative to playbook path
     - name: Ensure artifacts directory exists
       delegate_to: localhost
       run_once: true
       become: false
       ansible.builtin.file:
-        path: /runner/project/artifacts
+        path: "{{ playbook_dir }}/artifacts"
         state: directory
         mode: '0755'
 
-    # ✅ Save JSON files safely to the artifacts folder
-    - name: Save JSON file to AWX artifacts directory (on controller)
+    # ✅ Save JSON output in the right place
+    - name: Save JSON file to artifacts directory (on controller)
       delegate_to: localhost
       become: false
-      run_once: false
       ansible.builtin.copy:
         content: "{{ sysinfo | to_nice_json }}"
-        dest: "/runner/project/artifacts/system_info_{{ inventory_hostname }}.json"
+        dest: "{{ playbook_dir }}/artifacts/system_info_{{ inventory_hostname }}.json"
         mode: '0644'
 
     - name: Notify completion
       debug:
-        msg: "✅ System info JSON exported to /runner/project/artifacts (downloadable by admin)."
+        msg: "✅ System info JSON exported to {{ playbook_dir }}/artifacts (accessible via AWX admin)."
