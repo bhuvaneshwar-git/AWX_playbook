@@ -5,7 +5,6 @@
   become: yes
 
   vars:
-    # Add timestamp for unique filenames (e.g. 2025-10-27T12-45-32)
     export_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H-%M-%S') }}"
 
   tasks:
@@ -21,3 +20,7 @@
           storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }}"
           current_user: "{{ lookup('env', 'USER') }}"
 
+    - name: Export system information to JSON
+      copy:
+        content: "{{ sysinfo | to_nice_json }}"
+        dest: "/tmp/sysinfo-{{ export_timestamp }}.json"
