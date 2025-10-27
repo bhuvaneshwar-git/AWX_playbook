@@ -33,6 +33,7 @@
 
     - name: Save JSON file to AWX artifacts directory (on controller)
       delegate_to: localhost
+      become: false
       run_once: false
       copy:
         content: "{{ sysinfo | to_nice_json }}"
