@@ -39,6 +39,7 @@
     - name: Ensure artifacts directory exists
       delegate_to: localhost
       run_once: true
+      become: false
       ansible.builtin.file:
         path: "./artifacts"
         state: directory
@@ -47,6 +48,7 @@
     # ✅ Save JSON file in AWX job’s artifacts directory
     - name: Save JSON output inside AWX artifacts
       delegate_to: localhost
+      become: false
       ansible.builtin.copy:
         content: "{{ sysinfo | to_nice_json }}"
         dest: "./artifacts/system_info_{{ inventory_hostname }}_{{ export_timestamp }}.json"
