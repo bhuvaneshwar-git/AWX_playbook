@@ -1,9 +1,37 @@
 ---
-- name: Upgrade Google Chrome
+- name: Check and Upgrade Google Chrome
   hosts: all
-  become_user: root
+  become: yes
   gather_facts: no
 
   tasks:
-    - name: Run apt only-upgrade for Chrome
+    - name: Get current version of Google Chrome (before upgrade)
+      ansible.builtin.command: google-chrome --version
+      register: chrome_before
+      ignore_errors: yes
+
+    - name: Show current version
+      ansible.builtin.debug:
+        msg: "Current Chrome version: {{ chrome_before.stdout | default('Not Installed') }}"
+
+    - name: Upgrade Google Chrome to latest version
       ansible.builtin.command: apt --only-upgrade install -y google-chrome-stable
+      register: chrome_upgrade
+      changed_when: "'upgraded' in chrome_upgrade.stdout or chrome_upgrade.rc == 0"
+      failed_when: chrome_upgrade.rc != 0
+
+    - name: Show upgrade result
+      ansible.builtin.debug:
+        msg: "Chrome upgrade output: {{ chrome_upgrade.stdout | default('No output') }}"
+
+    - name: Get new version of Google Chrome (after upgrade)
+      ansible.builtin.command: google-chrome --version
+      register: chrome_after
+      ignore_errors: yes
+
+    - name: Show updated Chrome version
+      ansible.builtin.debug:
+        msg: |
+          ✅ Chrome was upgraded successfully!
+          Before: {{ chrome_before.stdout | default('Not Installed') }}
+          After:  {{ chrome_after.stdout | default('Unknown') }}
