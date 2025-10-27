@@ -1,7 +1,7 @@
 ---
 - name: Update Google Chrome on all Ubuntu systems
   hosts: all
-  become: yes
+  become_user: root
   gather_facts: yes
 
   tasks:
