@@ -5,7 +5,6 @@
   become: yes
 
   tasks:
-    # 1️⃣ Collect all facts into a single dictionary
     - name: Collect system information facts
       set_fact:
         sysinfo:
@@ -18,9 +17,8 @@
           storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }}"
           current_user: "{{ lookup('env', 'USER') }}"
 
-    # 2️⃣ Display human-readable version (for console clarity)
     - name: Show system info in human-readable format
-      ansible.builtin.debug:
+      debug:
         msg: |
           ===== System Information =====
           Hostname: {{ sysinfo.hostname }}
@@ -33,20 +31,14 @@
           Current User: {{ sysinfo.current_user }}
           =================================
 
-    # 3️⃣ Save JSON version to the AWX artifact directory (accessible to admin)
-    - name: Save JSON file to AWX artifact directory
+    - name: Save JSON file to AWX artifacts directory (on controller)
+      delegate_to: localhost
+      run_once: false
       copy:
         content: "{{ sysinfo | to_nice_json }}"
         dest: "/runner/artifacts/system_info_{{ inventory_hostname }}.json"
         mode: '0644'
 
-    # 4️⃣ Optionally expose it to AWX API via set_stats
-    - name: Send data to AWX result metadata
-      set_stats:
-        data:
-          system_info: "{{ sysinfo }}"
-
-    # 5️⃣ Final message
     - name: Notify completion
-      ansible.builtin.debug:
+      debug:
         msg: "✅ System info JSON exported to AWX Artifacts (downloadable by admin)."
