@@ -59,7 +59,7 @@
       delegate_to: localhost
       become: false
       ansible.builtin.file:
-        path: "/home/ubuntu/awx_exports"
+        path: "/home/ansibleadmin/awx_exports"
         state: directory
         mode: '0777'
 
@@ -77,5 +77,5 @@
         msg: |
           ✅ System info JSON exported to:
              - {{ playbook_dir }}/artifacts/
-             - /home/ubuntu/awx_exports/
+             - /home/ansibleadmin/awx_exports/
           (Each file includes a timestamp for versioning)
