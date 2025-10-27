@@ -1,47 +1,9 @@
 ---
-- name: Update Google Chrome on all Ubuntu systems
+- name: Upgrade Google Chrome
   hosts: all
   become_user: root
-  gather_facts: yes
+  gather_facts: no
 
   tasks:
-    - name: Ensure dependencies are present
-      apt:
-        name:
-          - wget
-          - apt-transport-https
-          - gnupg
-        state: present
-        update_cache: yes
-
-    - name: Add Google Chrome GPG key
-      ansible.builtin.command: >
-        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
-      args:
-        warn: false
-      changed_when: false
-
-    - name: Add Google Chrome repository
-      ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
-        state: present
-        filename: google-chrome
-
-    - name: Update package cache
-      ansible.builtin.apt:
-        update_cache: yes
-
-    - name: Ensure Google Chrome is installed and updated
-      ansible.builtin.apt:
-        name: google-chrome-stable
-        state: latest
-
-    - name: Display Chrome version
-      ansible.builtin.command: google-chrome --version
-      register: chrome_version
-      changed_when: false
-
-    - name: Show version info
-      debug:
-        msg: "✅ {{ inventory_hostname }} Chrome version: {{ chrome_version.stdout }}"
-
+    - name: Run apt only-upgrade for Chrome
+      ansible.builtin.command: apt --only-upgrade install -y google-chrome-stable
