@@ -82,3 +82,7 @@ step 15 - awx-manage changepassword admin ( enter your new password)
 
   
 To start or stop the pods - kubectl port-forward svc/awx-service -n awx 8080:80 ( execute this commands) 
+
+To start or stop the pods - 
+make sure minikube is started by using check status command - minikube status( To start minikube - minikube start )
+kubectl port-forward svc/awx-service -n awx 8080:80 ( execute this commands) 
