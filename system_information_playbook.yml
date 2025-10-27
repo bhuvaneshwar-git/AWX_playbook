@@ -5,7 +5,8 @@
   become: yes
 
   tasks:
-    - name: Collect system info into a dictionary
+    # 1️⃣ Collect all facts into a single dictionary
+    - name: Collect system information facts
       set_fact:
         sysinfo:
           hostname: "{{ ansible_hostname }}"
@@ -17,12 +18,35 @@
           storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }}"
           current_user: "{{ lookup('env', 'USER') }}"
 
-    - name: Save JSON output to AWX artifacts directory
+    # 2️⃣ Display human-readable version (for console clarity)
+    - name: Show system info in human-readable format
+      ansible.builtin.debug:
+        msg: |
+          ===== System Information =====
+          Hostname: {{ sysinfo.hostname }}
+          OS: {{ sysinfo.os }}
+          Kernel: {{ sysinfo.kernel }}
+          Architecture: {{ sysinfo.architecture }}
+          CPU: {{ sysinfo.cpu }}
+          RAM: {{ sysinfo.ram_gb }} GB
+          Storage: {{ sysinfo.storage_gb }} GB
+          Current User: {{ sysinfo.current_user }}
+          =================================
+
+    # 3️⃣ Save JSON version to the AWX artifact directory (accessible to admin)
+    - name: Save JSON file to AWX artifact directory
       copy:
         content: "{{ sysinfo | to_nice_json }}"
         dest: "/runner/artifacts/system_info_{{ inventory_hostname }}.json"
         mode: '0644'
 
-    - name: Notify admin
-      debug:
-        msg: "System information has been exported to job Artifacts."
+    # 4️⃣ Optionally expose it to AWX API via set_stats
+    - name: Send data to AWX result metadata
+      set_stats:
+        data:
+          system_info: "{{ sysinfo }}"
+
+    # 5️⃣ Final message
+    - name: Notify completion
+      ansible.builtin.debug:
+        msg: "✅ System info JSON exported to AWX Artifacts (downloadable by admin)."
