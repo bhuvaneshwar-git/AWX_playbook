@@ -35,47 +35,25 @@
           Current User: {{ sysinfo.current_user }}
           =================================
 
-    # ✅ Create artifacts directory safely (inside the controller pod)
+    # ✅ Create artifacts directory safely (in AWX runtime)
     - name: Ensure artifacts directory exists
       delegate_to: localhost
       run_once: true
-      become: false
       ansible.builtin.file:
-        path: "{{ playbook_dir }}/artifacts"
+        path: "./artifacts"
         state: directory
         mode: '0755'
 
-    # ✅ Save JSON output in the controller pod (AWX)
-    - name: Save JSON file to artifacts directory (inside AWX)
+    # ✅ Save JSON file in AWX job’s artifacts directory
+    - name: Save JSON output inside AWX artifacts
       delegate_to: localhost
-      become: false
       ansible.builtin.copy:
         content: "{{ sysinfo | to_nice_json }}"
-        dest: "{{ playbook_dir }}/artifacts/system_info_{{ inventory_hostname }}_{{ export_timestamp }}.json"
-        mode: '0644'
-
-    # ✅ Ensure persistent export directory exists on host
-    - name: Ensure /home/ansibleadmin/awx_exports exists
-      delegate_to: localhost
-      become: false
-      ansible.builtin.file:
-        path: "/home/ansibleadmin/awx_exports"
-        state: directory
-        mode: '0777'
-
-    # ✅ Copy JSON file to host machine (persistent storage)
-    - name: Copy JSON file to host machine (persistent storage)
-      delegate_to: localhost
-      become: false
-      ansible.builtin.copy:
-        content: "{{ sysinfo | to_nice_json }}"
-        dest: "/home/bhuvaneshwar.g/awx_exports/system_info_{{ inventory_hostname }}_{{ export_timestamp }}.json"
+        dest: "./artifacts/system_info_{{ inventory_hostname }}_{{ export_timestamp }}.json"
         mode: '0644'
 
     - name: Notify completion
       debug:
         msg: |
-          ✅ System info JSON exported to:
-             - {{ playbook_dir }}/artifacts/
-             - /home/ubuntu/awx_exports/
-          (Each file includes a timestamp for versioning)
+          ✅ System info JSON exported to './artifacts' folder
+          → Download it from AWX UI under **Job → Artifacts**
