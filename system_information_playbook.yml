@@ -2,9 +2,10 @@
 - name: Gather system information
   hosts: all
   gather_facts: yes
-  become_user: root
+  become: yes
 
   vars:
+    # Add timestamp for unique filenames (e.g. 2025-10-27T12-45-32)
     export_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H-%M-%S') }}"
 
   tasks:
@@ -19,17 +20,3 @@
           ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(0) }}"
           storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }}"
           current_user: "{{ lookup('env', 'USER') }}"
-
-    # Run once on control node: collect sysinfo from all hosts via hostvars
-    - name: Write combined JSON on control node
-      delegate_to: localhost
-      run_once: true
-      copy:
-        content: >-
-          {{
-            groups['all']
-            | map('extract', hostvars, 'sysinfo')
-            | list
-            | to_nice_json
-          }}
-        dest: "./collected_sysinfo-{{ export_timestamp }}.json"
