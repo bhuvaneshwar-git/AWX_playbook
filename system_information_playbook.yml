@@ -4,6 +4,10 @@
   gather_facts: yes
   become: yes
 
+  vars:
+    # Add timestamp for unique filenames (e.g. 2025-10-27T12-45-32)
+    export_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H-%M-%S') }}"
+
   tasks:
     - name: Collect system information facts
       set_fact:
@@ -47,18 +51,31 @@
       become: false
       ansible.builtin.copy:
         content: "{{ sysinfo | to_nice_json }}"
-        dest: "{{ playbook_dir }}/artifacts/system_info_{{ inventory_hostname }}.json"
+        dest: "{{ playbook_dir }}/artifacts/system_info_{{ inventory_hostname }}_{{ export_timestamp }}.json"
         mode: '0644'
 
-    # ✅ Optional: Also copy it to your host Ubuntu machine for persistence
+    # ✅ Ensure persistent export directory exists on host
+    - name: Ensure /home/ubuntu/awx_exports exists
+      delegate_to: localhost
+      become: false
+      ansible.builtin.file:
+        path: "/home/ubuntu/awx_exports"
+        state: directory
+        mode: '0777'
+
+    # ✅ Copy JSON file to host machine (persistent storage)
     - name: Copy JSON file to host machine (persistent storage)
       delegate_to: localhost
       become: false
       ansible.builtin.copy:
         content: "{{ sysinfo | to_nice_json }}"
-        dest: "/home/ubuntu/awx_exports/system_info_{{ inventory_hostname }}.json"
+        dest: "/home/ubuntu/awx_exports/system_info_{{ inventory_hostname }}_{{ export_timestamp }}.json"
         mode: '0644'
 
     - name: Notify completion
       debug:
-        msg: "✅ System info JSON exported to '{{ playbook_dir }}/artifacts' and '/home/ubuntu/awx_exports' (accessible from host)."
+        msg: |
+          ✅ System info JSON exported to:
+             - {{ playbook_dir }}/artifacts/
+             - /home/ubuntu/awx_exports/
+          (Each file includes a timestamp for versioning)
