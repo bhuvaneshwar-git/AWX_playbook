@@ -5,6 +5,7 @@
   gather_facts: no
 
   tasks:
+    # 🧩 Step 1: Get current version
     - name: Get current version of Google Chrome (before upgrade)
       ansible.builtin.command: google-chrome --version
       register: chrome_before
@@ -14,7 +15,8 @@
       ansible.builtin.debug:
         msg: "Current Chrome version: {{ chrome_before.stdout | default('Not Installed') }}"
 
-    - name: Upgrade Google Chrome to latest version
+    # ⚙️ Step 2: Upgrade Chrome using your exact command
+    - name: Run apt only-upgrade for Chrome
       ansible.builtin.command: apt --only-upgrade install -y google-chrome-stable
       register: chrome_upgrade
       changed_when: "'upgraded' in chrome_upgrade.stdout or chrome_upgrade.rc == 0"
@@ -24,6 +26,7 @@
       ansible.builtin.debug:
         msg: "Chrome upgrade output: {{ chrome_upgrade.stdout | default('No output') }}"
 
+    # 🔄 Step 3: Get new version
     - name: Get new version of Google Chrome (after upgrade)
       ansible.builtin.command: google-chrome --version
       register: chrome_after
@@ -32,6 +35,6 @@
     - name: Show updated Chrome version
       ansible.builtin.debug:
         msg: |
-          ✅ Chrome was upgraded successfully!
+          ✅ Chrome version updated successfully!
           Before: {{ chrome_before.stdout | default('Not Installed') }}
           After:  {{ chrome_after.stdout | default('Unknown') }}
