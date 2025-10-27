@@ -55,7 +55,7 @@
         mode: '0644'
 
     # ✅ Ensure persistent export directory exists on host
-    - name: Ensure /home/ubuntu/awx_exports exists
+    - name: Ensure /home/ansibleadmin/awx_exports exists
       delegate_to: localhost
       become: false
       ansible.builtin.file:
