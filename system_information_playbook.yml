@@ -20,16 +20,16 @@
           storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }}"
           current_user: "{{ lookup('env', 'USER') }}"
 
-    # Collect sysinfo from all hosts into a single registered variable
-    - name: Register sysinfo from each host
-      set_fact:
-        host_sysinfo: "{{ sysinfo }}"
-      register: sysinfo_results
-
-    # Aggregate all host sysinfo into one JSON file on control node
+    # Run once on control node: collect sysinfo from all hosts via hostvars
     - name: Write combined JSON on control node
       delegate_to: localhost
       run_once: true
       copy:
-        content: "{{ sysinfo_results.results | map(attribute='ansible_facts.host_sysinfo') | list | to_nice_json }}"
+        content: >-
+          {{
+            groups['all']
+            | map('extract', hostvars, 'sysinfo')
+            | list
+            | to_nice_json
+          }}
         dest: "./collected_sysinfo-{{ export_timestamp }}.json"
