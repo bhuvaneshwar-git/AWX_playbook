@@ -50,13 +50,6 @@
         dest: "{{ playbook_dir }}/artifacts/system_info_{{ inventory_hostname }}.json"
         mode: '0644'
 
-    - name: Save JSON to controller host (Ubuntu)
-      delegate_to: localhost
-      become: false
-      copy:
-      content: "{{ sysinfo | to_nice_json }}"
-      dest: "/opt/awx_exports/system_info_{{ inventory_hostname }}.json"
-
 
     - name: Notify completion
       debug:
