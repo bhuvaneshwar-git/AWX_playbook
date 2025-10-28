@@ -1,16 +1,14 @@
 ---
-# ===========================
-# PLAY 1 – Gather system info
-# ===========================
+# =========================================
+# PLAY 1 – Gather system info on all hosts
+# =========================================
 - name: Gather system information from all hosts
   hosts: all
   become: yes
   gather_facts: yes
 
   vars:
-    collector_host: "192.168.2.111"        # Host where final merged file will be stored
-    remote_export_dir: "/tmp/sysinfo_exports"  # Directory on each remote host
-    collector_export_dir: "/tmp/collected_sysinfo"  # Directory on collector host
+    remote_export_dir: "/tmp/sysinfo_exports"
 
   tasks:
     - name: Ensure export directory exists on each host
@@ -37,41 +35,49 @@
         content: "{{ sysinfo | to_nice_json }}"
         dest: "{{ remote_export_dir }}/system_info_{{ ansible_host }}.json"
 
-# ===============================================
-# PLAY 2 – Copy and combine all JSONs on collector
-# ===============================================
+
+# =============================================
+# PLAY 2 – Fetch files & merge on collector host
+# =============================================
 - name: Collect and merge system info
-  hosts: all
+  hosts: localhost
   gather_facts: no
 
   vars:
     collector_host: "192.168.2.111"
-    remote_export_dir: "/tmp/sysinfo_exports"
     collector_export_dir: "/tmp/collected_sysinfo"
+    local_tmp_dir: "./fetched_sysinfo"
 
   tasks:
-    - name: Ensure collector directory exists
+    - name: Ensure local temp directory exists
       file:
-        path: "{{ collector_export_dir }}"
+        path: "{{ local_tmp_dir }}"
         state: directory
         mode: "0755"
-      delegate_to: "{{ collector_host }}"
-      run_once: true
 
-    - name: Copy JSON files from each host to collector
+    - name: Fetch JSONs from all hosts to local temp
       fetch:
-        src: "{{ remote_export_dir }}/system_info_{{ ansible_host }}.json"
-        dest: "{{ collector_export_dir }}/"
+        src: "/tmp/sysinfo_exports/system_info_{{ inventory_hostname }}.json"
+        dest: "{{ local_tmp_dir }}/"
         flat: yes
+
+    - name: Ensure collector directory exists
+      ansible.builtin.shell: "mkdir -p {{ collector_export_dir }}"
       delegate_to: "{{ collector_host }}"
 
-    - name: Merge all JSONs into a single file
+    - name: Copy JSON files to collector host
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ collector_export_dir }}/"
+      loop: "{{ lookup('fileglob', local_tmp_dir + '/*.json', wantlist=True) }}"
       delegate_to: "{{ collector_host }}"
-      run_once: true
-      shell: |
+
+    - name: Merge all JSONs into one single file on collector
+      ansible.builtin.shell: |
         jq -s '.' {{ collector_export_dir }}/*.json > {{ collector_export_dir }}/all_system_info.json
       args:
         executable: /bin/bash
+      delegate_to: "{{ collector_host }}"
 
     - name: Display merged file path
       debug:
