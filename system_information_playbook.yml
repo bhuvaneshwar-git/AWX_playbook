@@ -1,71 +1,78 @@
 ---
+# ===========================
+# PLAY 1 – Gather system info
+# ===========================
 - name: Gather system information from all hosts
   hosts: all
-  gather_facts: yes
   become: yes
+  gather_facts: yes
 
   vars:
-    export_temp_dir: "/tmp/sysinfo_exports"
-    export_filename: "system_info_{{ inventory_hostname }}.json"
-    collector_host: "192.168.2.111"  # 👈 destination host where final JSON will live
+    collector_host: "192.168.2.111"        # Host where final merged file will be stored
+    remote_export_dir: "/tmp/sysinfo_exports"  # Directory on each remote host
+    collector_export_dir: "/tmp/collected_sysinfo"  # Directory on collector host
 
   tasks:
-    - name: Ensure temporary directory exists
+    - name: Ensure export directory exists on each host
       file:
-        path: "{{ export_temp_dir }}"
+        path: "{{ remote_export_dir }}"
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Gather system information
       set_fact:
         sysinfo:
           hostname: "{{ ansible_hostname }}"
+          ip_address: "{{ ansible_host }}"
           os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
           kernel: "{{ ansible_kernel }}"
           architecture: "{{ ansible_architecture }}"
-          cpu: "{{ ansible_processor[1] | default('Unknown') }}"
+          cpu: "{{ ansible_processor[0] | default('Unknown CPU') }}"
           ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(1) }}"
           storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(1) }}"
-          ip_address: "{{ ansible_default_ipv4.address }}"
-          timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
+          timestamp: "{{ ansible_date_time.iso8601 }}"
 
-    - name: Save each host info JSON on collector
+    - name: Write system info JSON file on each host
       copy:
-        dest: "/tmp/sysinfo_exports/{{ export_filename }}"
         content: "{{ sysinfo | to_nice_json }}"
+        dest: "{{ remote_export_dir }}/system_info_{{ ansible_host }}.json"
+
+# ===============================================
+# PLAY 2 – Copy and combine all JSONs on collector
+# ===============================================
+- name: Collect and merge system info
+  hosts: all
+  gather_facts: no
+
+  vars:
+    collector_host: "192.168.2.111"
+    remote_export_dir: "/tmp/sysinfo_exports"
+    collector_export_dir: "/tmp/collected_sysinfo"
+
+  tasks:
+    - name: Ensure collector directory exists
+      file:
+        path: "{{ collector_export_dir }}"
+        state: directory
+        mode: "0755"
       delegate_to: "{{ collector_host }}"
-      become: false
+      run_once: true
 
-
-# SECOND PLAY – merge all individual files into one
-    - name: Copy JSON files from all hosts to collector
+    - name: Copy JSON files from each host to collector
       fetch:
-        src: "{{ export_dir }}/system_info_{{ ansible_host }}.json"
-        dest: "/tmp/collected_files/"
+        src: "{{ remote_export_dir }}/system_info_{{ ansible_host }}.json"
+        dest: "{{ collector_export_dir }}/"
         flat: yes
       delegate_to: "{{ collector_host }}"
 
-- name: Combine all system info into one JSON file on collector
-  hosts: 192.168.2.111
-  gather_facts: no
-  become: yes
-
-  vars:
-    export_dir: "/tmp/collected_files"
-    output_file: "/tmp/all_system_info.json"
-
-  tasks:
-    - name: Ensure jq is installed
-      apt:
-        name: jq
-        state: present
-      become: yes
-
-    - name: Combine all JSON files into one
-      shell: "jq -s '.' {{ export_dir }}/*.json > {{ output_file }}"
+    - name: Merge all JSONs into a single file
+      delegate_to: "{{ collector_host }}"
+      run_once: true
+      shell: |
+        jq -s '.' {{ collector_export_dir }}/*.json > {{ collector_export_dir }}/all_system_info.json
       args:
         executable: /bin/bash
 
-    - name: Display combined file path
+    - name: Display merged file path
       debug:
-        msg: "All system information saved to {{ output_file }} on {{ inventory_hostname }}"
+        msg: "✅ Combined JSON saved at {{ collector_export_dir }}/all_system_info.json on {{ collector_host }}"
