@@ -30,6 +30,7 @@
 
     - name: Ensure export directory exists
       become: yes
+      become_user: root
       file:
         path: "{{ export_dir }}"
         state: directory
