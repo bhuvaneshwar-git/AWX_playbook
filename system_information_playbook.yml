@@ -33,7 +33,7 @@
         dest: "{{ export_temp_dir }}/{{ export_filename }}"
         content: "{{ sysinfo | to_nice_json }}"
       delegate_to: localhost
-      run_once: false
+      become: false
 
 
 - name: Combine all host JSONs into one and save on collector host
