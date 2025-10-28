@@ -40,3 +40,23 @@
     - name: Confirm export path
       debug:
         msg: "✅ System info for {{ inventory_hostname }} saved to {{ export_dir }}/{{ export_filename }} on {{ collector_host }}"
+        # Merge all JSONs into one file on collector
+    - name: Merge all collected system info JSON files
+      hosts: "{{ collector_host }}"
+      become: yes
+      gather_facts: no
+
+  vars:
+    export_dir: "/tmp/sysinfo_exports"
+    merged_file: "sys_info.json"
+
+  tasks:
+    - name: Merge all JSON files into one
+      shell: "sudo cat {{ export_dir }}/*.json | sudo tee {{ export_dir }}/{{ merged_file }} > /dev/null"
+      args:
+        executable: /bin/bash
+
+    - name: Confirm merged file path
+      debug:
+        msg: "✅ All system info merged into {{ export_dir }}/{{ merged_file }}"
+
