@@ -1,0 +1,34 @@
+kubectl (CLI tool to control the cluster)
+│
+├── Cluster (the whole Kubernetes environment)
+│   │
+│   ├── Nodes (machines that run workloads)
+│   │   │
+│   │   ├── Pods (smallest deployable unit, containers run here)
+│   │   │   │
+│   │   │   ├── awx-web pod (serves the AWX UI in browser)
+│   │   │   ├── awx-task pod (executes jobs, playbooks, background tasks)
+│   │   │   ├── awx-postgres pod (database for AWX data)
+│   │   │   └── awx-migration pod (one-time DB schema updates)
+│   │   │
+│   │   └── Other system pods (DNS, metrics, etc.)
+│   │
+│   ├── Deployments (controllers that ensure pods stay running)
+│   │   └── Manage replicas of awx-web, awx-task, etc.
+│   │
+│   ├── Services (stable network endpoints to reach pods)
+│   │   ├── ClusterIP (internal only)
+│   │   ├── NodePort (exposes AWX on node’s IP + port)
+│   │   └── Ingress (optional, clean hostname access like awx.local)
+│   │
+│   └── Namespace (logical grouping of resources, e.g., "awx")
+│
+├── AWX Operator (special controller that automates AWX lifecycle)
+│   │
+│   ├── Custom Resource (AWX CR, e.g., awx-deploy.yaml)
+│   │   └── Defines desired state: replicas, service type, secrets
+│   │
+│   └── Reconciliation loop (ensures pods/services match CR spec)
+│
+└── Secrets (store sensitive data)
+    └── awx-admin-password (used to log into AWX UI)
