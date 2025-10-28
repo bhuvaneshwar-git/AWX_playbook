@@ -46,7 +46,7 @@
       delegate_to: "192.168.2.111"
 
 - name: Combine all system info into one JSON file on collector
-  hosts: all
+  hosts: 192.168.2.111
   gather_facts: no
   become: yes
 
