@@ -76,7 +76,7 @@
 # ---------------- SECOND PLAY ----------------
 - name: Merge all collected system info JSON files on collector
   hosts: 192.168.2.111
-  become_user: root
+  become: yes
   gather_facts: no
 
   vars:
@@ -85,6 +85,7 @@
 
   tasks:
     - name: Merge all JSON files into one
+      become_user: root
       shell: "cat {{ export_dir }}/*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
       args:
         executable: /bin/bash
