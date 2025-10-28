@@ -1,48 +1,52 @@
 ---
-- name: Gather system information and save in one file
+- name: Gather system information from all hosts
   hosts: all
   gather_facts: yes
   become: yes
 
   vars:
-    collector_host: "192.168.2.111"   # <-- change this IP to the system where final file should be stored
-    export_dir: "/tmp/sysinfo_exports"
+    export_temp_dir: "/tmp/sysinfo_exports"
+    export_filename: "system_info_{{ inventory_hostname }}.json"
+    collector_host: "192.168.2.111"  # 👈 destination host where final JSON will live
 
   tasks:
-    - name: Ensure export directory exists on each host
+    - name: Ensure temporary directory exists
       file:
-        path: "{{ export_dir }}"
+        path: "{{ export_temp_dir }}"
         state: directory
-        mode: "0755"
+        mode: '0755'
 
     - name: Gather system information
       set_fact:
         sysinfo:
           hostname: "{{ ansible_hostname }}"
-          ip_address: "{{ ansible_host }}"
           os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
           kernel: "{{ ansible_kernel }}"
           architecture: "{{ ansible_architecture }}"
-          cpu: "{{ ansible_processor[0] }}"
+          cpu: "{{ ansible_processor[1] | default('Unknown') }}"
           ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(1) }}"
-          storage_gb: "{{ (ansible_devices['sda'].size | regex_replace(' GB', '') | float) | default(0) }}"
-          timestamp: "{{ ansible_date_time.iso8601 }}"
+          storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(1) }}"
+          ip_address: "{{ ansible_default_ipv4.address }}"
+          timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
 
-    - name: Write system info to a JSON file on each host
+    - name: Save each host info JSON on collector
       copy:
+        dest: "/tmp/sysinfo_exports/{{ export_filename }}"
         content: "{{ sysinfo | to_nice_json }}"
-        dest: "{{ export_dir }}/system_info_{{ ansible_host }}.json"
+      delegate_to: "{{ collector_host }}"
+      become: false
 
-    # ✅ Copy all JSON files from each host to the collector
+
+# SECOND PLAY – merge all individual files into one
     - name: Copy JSON files from all hosts to collector
       fetch:
         src: "{{ export_dir }}/system_info_{{ ansible_host }}.json"
         dest: "/tmp/collected_files/"
         flat: yes
-      delegate_to: "{{ collector_host }}"
+      delegate_to: "192.168.2.111"
 
 - name: Combine all system info into one JSON file on collector
-  hosts: "{{ collector_host }}"
+  hosts: all
   gather_facts: no
   become: yes
 
