@@ -86,3 +86,6 @@ To start or stop the pods - kubectl port-forward svc/awx-service -n awx 8080:80 
 To start or stop the pods - 
 make sure minikube is started by using check status command - minikube status( To start minikube - minikube start )
 kubectl port-forward svc/awx-service -n awx 8080:80 ( execute this commands) 
+
+
+official documentation for persistence storage - https://docs.ansible.com/automation-controller/4.0.0/html/administration/operator_advanced_configurations.html
