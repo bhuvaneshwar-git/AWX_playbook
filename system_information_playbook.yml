@@ -1,64 +1,67 @@
 ---
-- name: Gather system information from all hosts
+- name: Gather system information and save in one file
   hosts: all
   gather_facts: yes
   become: yes
 
   vars:
-    export_temp_dir: "/tmp/sysinfo_exports"
-    export_filename: "system_info_{{ inventory_hostname }}.json"
-    collector_host: "192.168.2.111"  # 👈 destination host where final JSON will live
+    collector_host: "192.168.2.111"   # <-- change this IP to the system where final file should be stored
+    export_dir: "/tmp/sysinfo_exports"
 
   tasks:
-    - name: Ensure temporary directory exists
+    - name: Ensure export directory exists on each host
       file:
-        path: "{{ export_temp_dir }}"
+        path: "{{ export_dir }}"
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Gather system information
       set_fact:
         sysinfo:
           hostname: "{{ ansible_hostname }}"
+          ip_address: "{{ ansible_host }}"
           os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
           kernel: "{{ ansible_kernel }}"
           architecture: "{{ ansible_architecture }}"
-          cpu: "{{ ansible_processor[1] | default('Unknown') }}"
+          cpu: "{{ ansible_processor[0] }}"
           ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(1) }}"
-          storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(1) }}"
-          ip_address: "{{ ansible_default_ipv4.address }}"
-          timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
+          storage_gb: "{{ (ansible_devices['sda'].size | regex_replace(' GB', '') | float) | default(0) }}"
+          timestamp: "{{ ansible_date_time.iso8601 }}"
 
-    - name: Save each host info JSON on collector
+    - name: Write system info to a JSON file on each host
       copy:
-        dest: "/tmp/sysinfo_exports/{{ export_filename }}"
         content: "{{ sysinfo | to_nice_json }}"
+        dest: "{{ export_dir }}/system_info_{{ ansible_host }}.json"
+
+    # ✅ Copy all JSON files from each host to the collector
+    - name: Copy JSON files from all hosts to collector
+      fetch:
+        src: "{{ export_dir }}/system_info_{{ ansible_host }}.json"
+        dest: "/tmp/collected_files/"
+        flat: yes
       delegate_to: "{{ collector_host }}"
-      become: false
 
-
-# SECOND PLAY – merge all individual files into one
-- name: Combine all host system info into one JSON file
-  hosts: 192.168.2.111   # 👈 collector host IP
+- name: Combine all system info into one JSON file on collector
+  hosts: "{{ collector_host }}"
   gather_facts: no
   become: yes
 
   vars:
-    export_temp_dir: "/tmp/sysinfo_exports"
-    final_export_file: "/mnt/shared/all_system_info.json"
+    export_dir: "/tmp/collected_files"
+    output_file: "/tmp/all_system_info.json"
 
   tasks:
-    - name: Ensure destination directory exists
-      file:
-        path: "{{ export_temp_dir }}"
-        state: directory
+    - name: Ensure jq is installed
+      apt:
+        name: jq
+        state: present
+      become: yes
 
-    - name: Combine all JSON files into one single array
-      shell: |
-        jq -s '.' {{ export_temp_dir }}/*.json > {{ final_export_file }}
+    - name: Combine all JSON files into one
+      shell: "jq -s '.' {{ export_dir }}/*.json > {{ output_file }}"
       args:
         executable: /bin/bash
 
-    - name: Show combined file location
+    - name: Display combined file path
       debug:
-        msg: "✅ All system info saved to {{ final_export_file }}"
+        msg: "All system information saved to {{ output_file }} on {{ inventory_hostname }}"
