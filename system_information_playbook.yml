@@ -1,5 +1,5 @@
 ---
-- name: Gather system information from all hosts
+- name: Gather detailed hardware and system information
   hosts: all
   gather_facts: yes
   become: yes
@@ -18,19 +18,50 @@
       delegate_to: "{{ collector_host }}"
       run_once: true
 
-    - name: Gather system information
+    # ---------- CPU INFO ----------
+    - name: Get full CPU model name
+      shell: "dmidecode -t processor | grep 'Version:' | head -1 | awk -F': ' '{print $2}'"
+      register: cpu_model
+      ignore_errors: yes
+
+    # ---------- MEMORY INFO ----------
+    - name: Get total number of memory slots
+      shell: "dmidecode -t memory | grep -c 'Locator:'"
+      register: total_slots
+      ignore_errors: yes
+
+    - name: Get installed RAM modules
+      shell: >
+        dmidecode -t memory |
+        awk '/Locator:/ {slot=$2} /Size:/ {size=$2" "$3; if (size != "No Module Installed") print slot"="size}'
+      register: used_slots
+      ignore_errors: yes
+
+    # ---------- STORAGE INFO ----------
+    - name: Get disk details (model, size, type)
+      shell: >
+        lsblk -d -o NAME,MODEL,ROTA,SIZE |
+        awk 'NR>1 {type=($3==0)?"SSD":"HDD"; print $1"="type", " $2", " $4}'
+      register: disk_info
+      ignore_errors: yes
+
+    # ---------- BASIC SYSTEM INFO ----------
+    - name: Gather basic system info
       set_fact:
         sysinfo:
           hostname: "{{ ansible_hostname }}"
           os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
           kernel: "{{ ansible_kernel }}"
           architecture: "{{ ansible_architecture }}"
-          cpu: "{{ ansible_processor[1] | default('Unknown') }}"
-          ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(1) }}"
-          storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(1) }}"
-          ip_address: "{{ ansible_default_ipv4.address }}"
+          ip_address: "{{ ansible_default_ipv4.address | default('N/A') }}"
+          cpu_model: "{{ cpu_model.stdout | default('Unknown') }}"
+          ram_total_gb: "{{ (ansible_memtotal_mb / 1024) | round(1) }}"
+          total_ram_slots: "{{ total_slots.stdout | default('Unknown') }}"
+          used_ram_slots: "{{ used_slots.stdout_lines | default([]) }}"
+          disks: "{{ disk_info.stdout_lines | default([]) }}"
           timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
 
+    # ---------- EXPORT JSON TO COLLECTOR ----------
     - name: Copy JSON data to collector
       copy:
         dest: "{{ export_dir }}/{{ export_filename }}"
@@ -41,7 +72,7 @@
       debug:
         msg: "✅ System info for {{ inventory_hostname }} saved to {{ export_dir }}/{{ export_filename }} on {{ collector_host }}"
 
-# ---------------- Second Play ----------------
+# ---------------- SECOND PLAY ----------------
 - name: Merge all collected system info JSON files on collector
   hosts: 192.168.2.111
   become: yes
@@ -53,7 +84,6 @@
 
   tasks:
     - name: Merge all JSON files into one
-      become_user: root
       shell: "cat {{ export_dir }}/*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
       args:
         executable: /bin/bash
