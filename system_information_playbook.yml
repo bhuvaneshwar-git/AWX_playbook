@@ -5,15 +5,18 @@
   become: yes
 
   vars:
-    export_temp_dir: "/tmp/sysinfo_exports"
+    export_dir: "/tmp/sysinfo_exports"
     export_filename: "system_info_{{ inventory_hostname }}.json"
+    collector_host: "192.168.2.111"
 
   tasks:
-    - name: Ensure temporary directory exists
+    - name: Ensure export directory exists on collector
       file:
-        path: "{{ export_temp_dir }}"
+        path: "{{ export_dir }}"
         state: directory
         mode: '0755'
+      delegate_to: "{{ collector_host }}"
+      run_once: true
 
     - name: Gather system information
       set_fact:
@@ -28,13 +31,12 @@
           ip_address: "{{ ansible_default_ipv4.address }}"
           timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
 
-    - name: Save each host info to controller temp folder
+    - name: Copy JSON data to collector
       copy:
-        dest: "/tmp/sysinfo_exports/{{ export_filename }}"
+        dest: "{{ export_dir }}/{{ export_filename }}"
         content: "{{ sysinfo | to_nice_json }}"
-      delegate_to: 192.168.2.111   # 👈 your collector/destination host IP
-      run_once: false
+      delegate_to: "{{ collector_host }}"
 
-    - name: Show final export path
+    - name: Confirm export path
       debug:
-        msg: "✅ All system info combined and saved to {{ final_export_file }}"
+        msg: "✅ System info for {{ inventory_hostname }} saved to {{ export_dir }}/{{ export_filename }} on {{ collector_host }}"
