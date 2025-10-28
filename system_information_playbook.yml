@@ -75,7 +75,7 @@
 # ---------------- SECOND PLAY ----------------
 - name: Merge all collected system info JSON files on collector
   hosts: 192.168.2.111
-  become: yes
+  become_user: root
   gather_facts: no
 
   vars:
