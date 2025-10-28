@@ -43,7 +43,7 @@
         src: "{{ export_dir }}/system_info_{{ ansible_host }}.json"
         dest: "/tmp/collected_files/"
         flat: yes
-      delegate_to: "192.168.2.111"
+      delegate_to: 192.168.2.111
 
 - name: Combine all system info into one JSON file on collector
   hosts: 192.168.2.111
