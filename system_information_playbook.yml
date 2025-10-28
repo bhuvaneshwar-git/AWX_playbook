@@ -1,29 +1,45 @@
 ---
-- name: Gather system information
+- name: Gather system information and export as JSON
   hosts: all
   gather_facts: yes
   become: yes
 
   vars:
-    # Add timestamp for unique filenames (e.g. 2025-10-27T12-45-32)
+    # Timestamp for unique JSON filenames
     export_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H-%M-%S') }}"
-    export_dir: "/exports"   # <-- this should be your mounted hostPath or PVC
+    export_dir: "/mnt/shared"     # Change this to your mounted path (e.g. hostPath or PVC)
+    export_filename: "system_info_{{ inventory_hostname }}_{{ export_timestamp }}.json"
 
   tasks:
-    - name: Collect system information facts
+    - name: Collect system information
       set_fact:
         sysinfo:
           hostname: "{{ ansible_hostname }}"
           os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
           kernel: "{{ ansible_kernel }}"
           architecture: "{{ ansible_architecture }}"
-          cpu: "{{ ansible_processor[1] | regex_replace('.*Intel.*', 'Intel') | regex_replace('.*AMD.*', 'AMD') }}"
+          cpu: >-
+            {{ ansible_processor[1]
+              | regex_replace('.*Intel.*', 'Intel')
+              | regex_replace('.*AMD.*', 'AMD')
+              | default(ansible_processor[1]) }}
           ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(0) }}"
           storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }}"
           current_user: "{{ lookup('env', 'USER') }}"
+          timestamp: "{{ export_timestamp }}"
+
+    - name: Ensure export directory exists
+      file:
+        path: "{{ export_dir }}"
+        state: directory
+        mode: '0777'
 
     - name: Export system information to JSON file
       copy:
         content: "{{ sysinfo | to_nice_json }}"
-        dest: "{{ export_dir }}/sysinfo-{{ inventory_hostname }}-{{ export_timestamp }}.json"
+        dest: "{{ export_dir }}/{{ export_filename }}"
         mode: '0644'
+
+    - name: Display exported JSON path
+      debug:
+        msg: "System information exported to {{ export_dir }}/{{ export_filename }}"
