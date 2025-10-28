@@ -41,6 +41,7 @@
         content: "{{ sysinfo | to_nice_json }}"
         dest: "{{ export_dir }}/{{ export_filename }}"
         mode: '0644'
+      delegate_to: localhost
 
     - name: Display exported JSON path
       debug:
