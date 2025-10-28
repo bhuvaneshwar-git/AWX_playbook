@@ -26,6 +26,7 @@
 
     # ---------- MEMORY INFO ----------
     - name: Get total number of memory slots
+      become_user: root
       shell: "dmidecode -t memory | grep -c 'Locator:'"
       register: total_slots
       ignore_errors: yes
