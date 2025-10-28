@@ -28,21 +28,12 @@
           current_user: "{{ lookup('env', 'USER') }}"
           timestamp: "{{ export_timestamp }}"
 
-    - name: Ensure export directory exists
-      become: yes
-      become_user: root
-      file:
-        path: "{{ export_dir }}"
-        state: directory
-        mode: '0777'
-
-    - name: Export system information to JSON file
-      become: no
-      copy:
-        content: "{{ sysinfo | to_nice_json }}"
-        dest: "{{ export_dir }}/{{ export_filename }}"
-        mode: '0644'
+    - name: Save system info as AWX artifact
+      set_stats:
+        data:
+          system_info_json: "{{ sysinfo | to_nice_json }}"
       delegate_to: localhost
+
 
     - name: Display exported JSON path
       debug:
