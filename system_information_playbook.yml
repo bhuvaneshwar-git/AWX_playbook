@@ -29,6 +29,7 @@
           timestamp: "{{ export_timestamp }}"
 
     - name: Ensure export directory exists
+      become: yes
       file:
         path: "{{ export_dir }}"
         state: directory
