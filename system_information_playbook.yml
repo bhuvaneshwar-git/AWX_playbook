@@ -40,11 +40,12 @@
     - name: Confirm export path
       debug:
         msg: "✅ System info for {{ inventory_hostname }} saved to {{ export_dir }}/{{ export_filename }} on {{ collector_host }}"
-        # --- Second Play starts here ---
-    - name: Merge all collected system info JSON files on collector
-      hosts: 192.168.2.111
-      become: yes
-      gather_facts: no
+
+# ---------------- Second Play ----------------
+- name: Merge all collected system info JSON files on collector
+  hosts: 192.168.2.111
+  become: yes
+  gather_facts: no
 
   vars:
     export_dir: "/tmp/sysinfo_exports"
@@ -52,7 +53,7 @@
 
   tasks:
     - name: Merge all JSON files into one
-      shell: "sudo cat {{ export_dir }}/*.json | sudo tee {{ export_dir }}/{{ merged_file }} > /dev/null"
+      shell: "cat {{ export_dir }}/*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
       args:
         executable: /bin/bash
 
