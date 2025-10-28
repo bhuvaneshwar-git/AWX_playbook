@@ -1,40 +1,69 @@
 ---
-- name: Gather system information and export as JSON
+- name: Gather system information from all hosts
   hosts: all
   gather_facts: yes
   become: yes
 
   vars:
-    # Timestamp for unique JSON filenames
-    export_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H-%M-%S') }}"
-    export_dir: "/mnt/shared"     # Change this to your mounted path (e.g. hostPath or PVC)
-    export_filename: "system_info_{{ inventory_hostname }}_{{ export_timestamp }}.json"
+    export_temp_dir: "/tmp/sysinfo_exports"
+    export_filename: "system_info_{{ inventory_hostname }}.json"
 
   tasks:
-    - name: Collect system information
+    - name: Ensure temporary directory exists
+      file:
+        path: "{{ export_temp_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Gather system information
       set_fact:
         sysinfo:
           hostname: "{{ ansible_hostname }}"
           os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
           kernel: "{{ ansible_kernel }}"
           architecture: "{{ ansible_architecture }}"
-          cpu: >-
-            {{ ansible_processor[1]
-              | regex_replace('.*Intel.*', 'Intel')
-              | regex_replace('.*AMD.*', 'AMD')
-              | default(ansible_processor[1]) }}
-          ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(0) }}"
-          storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }}"
-          current_user: "{{ lookup('env', 'USER') }}"
-          timestamp: "{{ export_timestamp }}"
+          cpu: "{{ ansible_processor[1] | default('Unknown') }}"
+          ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(1) }}"
+          storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(1) }}"
+          ip_address: "{{ ansible_default_ipv4.address }}"
+          timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
 
-    - name: Save system info as AWX artifact
-      set_stats:
-        data:
-          system_info_json: "{{ sysinfo | to_nice_json }}"
+    - name: Write each host’s info to local temp file
+      copy:
+        dest: "{{ export_temp_dir }}/{{ export_filename }}"
+        content: "{{ sysinfo | to_nice_json }}"
       delegate_to: localhost
+      run_once: false
 
 
-    - name: Display exported JSON path
+- name: Combine all host JSONs into one and save on collector host
+  hosts: collector_host
+  gather_facts: no
+  become: yes
+
+  vars:
+    export_temp_dir: "/tmp/sysinfo_exports"
+    final_export_file: "/mnt/shared/all_system_info.json"   # Host mount path (shared volume or local)
+  
+  tasks:
+    - name: Ensure export directory exists
+      file:
+        path: "{{ export_temp_dir }}"
+        state: directory
+
+    - name: Fetch all host JSONs from controller
+      fetch:
+        src: "{{ export_temp_dir }}/"
+        dest: "{{ export_temp_dir }}/"
+        flat: yes
+      delegate_to: 192.168.2.111
+
+    - name: Combine all JSONs into one file
+      shell: |
+        jq -s '.' {{ export_temp_dir }}/*.json > {{ final_export_file }}
+      args:
+        executable: /bin/bash
+
+    - name: Show final export location
       debug:
-        msg: "System information exported to {{ export_dir }}/{{ export_filename }}"
+        msg: "✅ Combined system info saved to {{ final_export_file }}"
