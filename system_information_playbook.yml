@@ -37,6 +37,7 @@
         mode: '0777'
 
     - name: Export system information to JSON file
+      become: no
       copy:
         content: "{{ sysinfo | to_nice_json }}"
         dest: "{{ export_dir }}/{{ export_filename }}"
