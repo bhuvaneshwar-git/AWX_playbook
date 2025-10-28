@@ -7,7 +7,7 @@
   vars:
     export_temp_dir: "/tmp/sysinfo_exports"
     export_filename: "system_info_{{ inventory_hostname }}.json"
-    collector_host: "192.168.2.200"  # 👈 destination host where final JSON will live
+    collector_host: "192.168.2.111"  # 👈 destination host where final JSON will live
 
   tasks:
     - name: Ensure temporary directory exists
@@ -39,7 +39,7 @@
 
 # SECOND PLAY – merge all individual files into one
 - name: Combine all host system info into one JSON file
-  hosts: 192.168.2.200   # 👈 collector host IP
+  hosts: 192.168.2.111   # 👈 collector host IP
   gather_facts: no
   become: yes
 
