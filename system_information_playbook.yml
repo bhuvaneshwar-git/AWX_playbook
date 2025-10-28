@@ -7,6 +7,7 @@
   vars:
     # Add timestamp for unique filenames (e.g. 2025-10-27T12-45-32)
     export_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H-%M-%S') }}"
+    export_dir: "/exports"   # <-- this should be your mounted hostPath or PVC
 
   tasks:
     - name: Collect system information facts
@@ -20,3 +21,9 @@
           ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(0) }}"
           storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(0) }}"
           current_user: "{{ lookup('env', 'USER') }}"
+
+    - name: Export system information to JSON file
+      copy:
+        content: "{{ sysinfo | to_nice_json }}"
+        dest: "{{ export_dir }}/sysinfo-{{ inventory_hostname }}-{{ export_timestamp }}.json"
+        mode: '0644'
