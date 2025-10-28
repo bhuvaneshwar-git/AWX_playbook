@@ -1,84 +1,62 @@
 ---
-# =========================================
-# PLAY 1 – Gather system info on all hosts
-# =========================================
 - name: Gather system information from all hosts
   hosts: all
-  become: yes
   gather_facts: yes
+  become: yes
 
   vars:
-    remote_export_dir: "/tmp/sysinfo_exports"
+    export_temp_dir: "/tmp/sysinfo_exports"
+    export_filename: "system_info_{{ inventory_hostname }}.json"
 
   tasks:
-    - name: Ensure export directory exists on each host
+    - name: Ensure temporary directory exists
       file:
-        path: "{{ remote_export_dir }}"
+        path: "{{ export_temp_dir }}"
         state: directory
-        mode: "0755"
+        mode: '0755'
 
     - name: Gather system information
       set_fact:
         sysinfo:
           hostname: "{{ ansible_hostname }}"
-          ip_address: "{{ ansible_host }}"
           os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
           kernel: "{{ ansible_kernel }}"
           architecture: "{{ ansible_architecture }}"
-          cpu: "{{ ansible_processor[0] | default('Unknown CPU') }}"
+          cpu: "{{ ansible_processor[1] | default('Unknown') }}"
           ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(1) }}"
           storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(1) }}"
-          timestamp: "{{ ansible_date_time.iso8601 }}"
+          ip_address: "{{ ansible_default_ipv4.address }}"
+          timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
 
-    - name: Write system info JSON file on each host
+    - name: Save each host info to controller temp folder
       copy:
+        dest: "/tmp/sysinfo_exports/{{ export_filename }}"
         content: "{{ sysinfo | to_nice_json }}"
-        dest: "{{ remote_export_dir }}/system_info_{{ ansible_host }}.json"
+      delegate_to: 192.168.2.111   # 👈 your collector/destination host IP
+      run_once: false
 
 
-# =============================================
-# PLAY 2 – Fetch files & merge on collector host
-# =============================================
-- name: Collect and merge system info
-  hosts: all
+- name: Combine all JSONs into one file on the collector host
+  hosts: 192.168.2.111      # 👈 same collector host IP
+  become: yes
   gather_facts: no
 
   vars:
-    collector_host: "192.168.2.111"
-    collector_export_dir: "/tmp/collected_sysinfo"
-    local_tmp_dir: "./fetched_sysinfo"
+    export_temp_dir: "/tmp/sysinfo_exports"
+    final_export_file: "/mnt/shared/all_system_info.json"
 
   tasks:
-    - name: Ensure local temp directory exists
+    - name: Ensure export directory exists
       file:
-        path: "{{ local_tmp_dir }}"
+        path: "{{ export_temp_dir }}"
         state: directory
-        mode: "0755"
 
-    - name: Fetch JSONs from all hosts to local temp
-      fetch:
-        src: "/tmp/sysinfo_exports/system_info_{{ inventory_hostname }}.json"
-        dest: "{{ local_tmp_dir }}/"
-        flat: yes
-
-    - name: Ensure collector directory exists
-      ansible.builtin.shell: "mkdir -p {{ collector_export_dir }}"
-      delegate_to: "{{ collector_host }}"
-
-    - name: Copy JSON files to collector host
-      ansible.builtin.copy:
-        src: "{{ item }}"
-        dest: "{{ collector_export_dir }}/"
-      loop: "{{ lookup('fileglob', local_tmp_dir + '/*.json', wantlist=True) }}"
-      delegate_to: "{{ collector_host }}"
-
-    - name: Merge all JSONs into one single file on collector
-      ansible.builtin.shell: |
-        jq -s '.' {{ collector_export_dir }}/*.json > {{ collector_export_dir }}/all_system_info.json
+    - name: Combine all JSON files into one
+      shell: |
+        jq -s '.' {{ export_temp_dir }}/*.json > {{ final_export_file }}
       args:
         executable: /bin/bash
-      delegate_to: "{{ collector_host }}"
 
-    - name: Display merged file path
+    - name: Show final export path
       debug:
-        msg: "✅ Combined JSON saved at {{ collector_export_dir }}/all_system_info.json on {{ collector_host }}"
+        msg: "✅ All system info combined and saved to {{ final_export_file }}"
