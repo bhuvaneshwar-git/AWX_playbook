@@ -30,10 +30,10 @@
 
     - name: Write each host’s info to local temp file
       copy:
-        dest: "{{ export_temp_dir }}/{{ export_filename }}"
+        dest: "/tmp/sysinfo_exports/{{ export_filename }}"
         content: "{{ sysinfo | to_nice_json }}"
-      delegate_to: localhost
-      become: false
+      delegate_to: 192.168.2.111   # your collector/destination host
+      become: false  
 
 
 - name: Combine all host JSONs into one and save on collector host
