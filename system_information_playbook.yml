@@ -40,7 +40,7 @@
 # PLAY 2 – Fetch files & merge on collector host
 # =============================================
 - name: Collect and merge system info
-  hosts: 192.168.2.111
+  hosts: all
   gather_facts: no
 
   vars:
