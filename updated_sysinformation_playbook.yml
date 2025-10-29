@@ -49,7 +49,8 @@
   become: yes
   gather_facts: no
 
-  vars: become_user: root
+  vars: 
+    become_user: root
     export_dir: "/home/bhuvaneshwar.g/systeminfo_export"
     merged_file: "sys_info.json"
   
