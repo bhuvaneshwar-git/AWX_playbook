@@ -33,7 +33,7 @@
           timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
 
     - name: Copy JSON data to collector
-      becomr: false
+      become: false
       copy:
         dest: "{{ export_dir }}/{{ export_filename }}"
         content: "{{ sysinfo | to_nice_json }}"
