@@ -2,7 +2,19 @@
 - name: Verify AppArmor compliance across hosts
   hosts: all
   gather_facts: no
+
+  vars:
+    export_dir: "/tmp/linux_harden"
+    export_filename: "linux_harden_report_{{ inventory_hostname }}.json"
+    collector_host: 192.168.2.111
+
   tasks:
+
+    - name: Ensure export directory exists
+      ansible.builtin.file:
+        path: "{{ export_dir }}"
+        state: directory
+        mode: '0755'
 
     - name: Check if AppArmor package is installed
       ansible.builtin.shell: dpkg -l | grep apparmor
@@ -17,23 +29,48 @@
       failed_when: false
 
     - name: Get AppArmor status
-      become_user: root
+      become: yes
       ansible.builtin.command: aa-status
       register: aa_status
       changed_when: false
       failed_when: false
 
-    - name: Build compliance report
+    - name: Build compliance report (JSON object)
       ansible.builtin.set_fact:
-        apparmor_report: |
-          Ensure AppArmor is installed - {{ 'yes (installed)' if apparmor_pkg.rc == 0 else 'no (not installed)' }}
-          Ensure AppArmor is enabled in the bootloader configuration - {{ 'yes' if apparmor_boot.rc == 0 else 'no (not configured)' }}
-          Ensure all AppArmor Profiles are in enforce or complain mode - {{ 'yes' if 'unconfined' not in aa_status.stdout else 'no (some unconfined)' }}
-          Ensure all AppArmor Profiles are enforcing - {{ 'yes' if 'profiles are in enforce mode' in aa_status.stdout else 'no (not all enforcing)' }}
+        apparmor_report:
+          host: "{{ inventory_hostname }}"
+          ensure_apparmor_installed: "{{ 'yes' if apparmor_pkg.rc == 0 else 'no' }}"
+          ensure_apparmor_enabled_bootloader: "{{ 'yes' if apparmor_boot.rc == 0 else 'no' }}"
+          ensure_profiles_enforce_or_complain: "{{ 'yes' if 'unconfined' not in aa_status.stdout else 'no' }}"
+          ensure_profiles_enforcing: "{{ 'yes' if 'profiles are in enforce mode' in aa_status.stdout else 'no' }}"
 
-    - name: Show compliance summary
-      ansible.builtin.debug:
-        msg: |
-          Host: {{ inventory_hostname }}
-          {{ apparmor_report }}
+    - name: Save JSON report locally on each host
+      ansible.builtin.copy:
+        dest: "{{ export_dir }}/{{ export_filename }}"
+        content: "{{ apparmor_report | to_nice_json }}"
+        mode: '0644'
 
+    - name: Copy JSON report to collector host
+      ansible.builtin.fetch:
+        src: "{{ export_dir }}/{{ export_filename }}"
+        dest: "{{ export_dir }}/"
+        flat: yes
+
+- name: Merge all collected system info JSON files on collector
+  hosts: 192.168.2.111
+  become: yes
+  gather_facts: no
+
+  vars: 
+    export_dir: "/tmp/linux_harden"
+    merged_file: "linux_harden_report_all.json"
+  
+  tasks:
+    - name: Merge all JSON files into one
+      shell: "jq -s '.' {{ export_dir }}/*.json > {{ export_dir }}/{{ merged_file }}"
+      args:
+        executable: /bin/bash
+
+    - name: Confirm merged file path
+      debug:
+        msg: "✅ All system info merged into {{ export_dir }}/{{ merged_file }}"
