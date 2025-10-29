@@ -9,12 +9,17 @@
     export_filename: "system_info_{{ inventory_hostname }}.json"
 
   tasks:
+    - name: Ensure sysinfo subfolder exists
+      command: mkdir -p /var/lib/awx/projects/sysinfo
+      run_once: true
+      
     - name: Ensure export directory exists inside PVC
       file:
         path: "{{ export_dir }}"
         state: directory
         mode: '0755'
       run_once: true
+
 
     - name: Gather system information
       set_fact:
