@@ -54,7 +54,7 @@
       ansible.builtin.fetch:
         src: "{{ export_dir }}/{{ export_filename }}"
         dest: "{{ export_dir }}/"
-        flat: yes
+        delegate_to: "{{ collector_host }}"
 
 - name: Merge all collected system info JSON files on collector
   hosts: 192.168.2.111
@@ -63,7 +63,7 @@
 
   vars: 
     export_dir: "/tmp/linux_harden"
-    merged_file: "linux_harden_report_all.json"
+    merged_file: "linux_harden_report.json"
   
   tasks:
     - name: Merge all JSON files into one
