@@ -11,7 +11,7 @@
 
   tasks:
     - name: Ensure export directory exists on collector
-      become: false
+      become: yes
       file:
         path: "{{ export_dir }}"
         state: directory
