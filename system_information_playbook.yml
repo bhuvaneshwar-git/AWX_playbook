@@ -5,13 +5,13 @@
   become: yes
 
   vars:
-    export_dir: "/var/lib/awx/projects/sysinfo"
+    export_dir: "/var/lib/awx/result"
     export_filename: "system_info_{{ inventory_hostname }}.json"
 
   tasks:
-    - name: Ensure sysinfo subfolder exists
-      command: mkdir -p /var/lib/awx/projects/sysinfo
-      run_once: true
+    # - name: Ensure sysinfo subfolder exists
+    #   command: mkdir -p /var/lib/awx/projects/sysinfo
+    #   run_once: true
       
     - name: Ensure export directory exists inside PVC
       file:
@@ -50,7 +50,7 @@
   gather_facts: no
 
   vars:
-    export_dir: "/var/lib/awx/projects/sysinfo"
+    export_dir: "/var/lib/awx/result"
     merged_file: "sys_info.json"
 
   tasks:
