@@ -12,7 +12,6 @@
   tasks:
     - name: Ensure export directory exists on collector
       become: false
-      become_user: root
       file:
         path: "{{ export_dir }}"
         state: directory
