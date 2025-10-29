@@ -54,6 +54,7 @@
         mode: '0644'
 
     - name: Copy JSON report to collector host
+      become: false
       ansible.builtin.fetch:
         src: "{{ export_dir }}/{{ export_filename }}"
         dest: "{{ export_dir }}/"
