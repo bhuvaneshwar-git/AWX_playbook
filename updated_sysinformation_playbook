@@ -1,0 +1,66 @@
+---
+- name: Gather system information from all hosts
+  hosts: all
+  gather_facts: yes
+  become: yes
+
+  vars:
+    export_dir: "/tmp/sysinfo_exports"
+    export_filename: "system_info_{{ inventory_hostname }}.json"
+    collector_host: 192.168.2.111
+
+  tasks:
+    - name: Ensure export directory exists on collector
+      become: false
+      file:
+        path: "{{ export_dir }}"
+        state: directory
+        mode: '0755'
+      delegate_to: "{{ collector_host }}"
+      run_once: true
+
+    - name: Gather system information
+      set_fact:
+        sysinfo:
+          hostname: "{{ ansible_hostname }}"
+          os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
+          kernel: "{{ ansible_kernel }}"
+          architecture: "{{ ansible_architecture }}"
+          cpu: "{{ ansible_processor[1] | default('Unknown') }}"
+          ram_gb: "{{ (ansible_memtotal_mb / 1024) | round(1) }}"
+          storage_gb: "{{ (ansible_mounts[0].size_total / 1024 / 1024 / 1024) | round(1) }}"
+          ip_address: "{{ ansible_default_ipv4.address }}"
+          timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
+
+    - name: Copy JSON data to collector
+      become: false
+      copy:
+        dest: "{{ export_dir }}/{{ export_filename }}"
+        content: "{{ sysinfo | to_nice_json }}"
+      delegate_to: "{{ collector_host }}"
+
+    - name: Confirm export path
+      debug:
+        msg: "✅ System info for {{ inventory_hostname }} saved to {{ export_dir }}/{{ export_filename }} on {{ collector_host }}"
+
+# ---------------- Second Play ----------------
+- name: Merge all collected system info JSON files on collector
+  hosts: 192.168.2.111
+  become: yes
+  gather_facts: no
+
+  vars:
+    export_dir: "/tmp/sysinfo_exports"
+    merged_file: "sys_info.json"
+  
+  tasks:
+    
+    - name: Merge all JSON files into one
+      become_user: root
+      shell: "cat {{ export_dir }}/*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
+      args:
+        executable: /bin/bash
+
+    - name: Confirm merged file path
+      debug:
+        msg: "✅ All system info merged into {{ export_dir }}/{{ merged_file }}"
