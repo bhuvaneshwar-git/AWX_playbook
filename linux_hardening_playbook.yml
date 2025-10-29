@@ -5,13 +5,11 @@
 
   vars:
     export_dir: "/tmp/linux_harden"
-    export_filename: "linux_harden_report_{{ inventory_hostname }}.json"
     collector_host: 192.168.2.111
 
   tasks:
 
-    - name: Ensure export directory exists
-      become: false
+    - name: Ensure export directory exists on collector
       ansible.builtin.file:
         path: "{{ export_dir }}"
         state: directory
@@ -47,17 +45,11 @@
           ensure_profiles_enforce_or_complain: "{{ 'yes' if 'unconfined' not in aa_status.stdout else 'no' }}"
           ensure_profiles_enforcing: "{{ 'yes' if 'profiles are in enforce mode' in aa_status.stdout else 'no' }}"
 
-    #- name: Save JSON report locally on each host
-     # ansible.builtin.copy:
-      #  dest: "{{ export_dir }}/{{ export_filename }}"
-       # content: "{{ apparmor_report | to_nice_json }}"
-        #mode: '0644'
-
-    - name: Copy JSON report to collector host
-      become: false
-      ansible.builtin.fetch:
-        src: "{{ export_dir }}/{{ export_filename }}"
-        dest: "{{ export_dir }}/"
+    - name: Save JSON report directly on collector
+      ansible.builtin.copy:
+        dest: "{{ export_dir }}/linux_harden_report_{{ inventory_hostname }}.json"
+        content: "{{ apparmor_report | to_nice_json }}"
+        mode: '0644'
       delegate_to: "{{ collector_host }}"
 
 - name: Merge all collected system info JSON files on collector
