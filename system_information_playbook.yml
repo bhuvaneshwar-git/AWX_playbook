@@ -17,6 +17,9 @@
         mode: '0755'
       delegate_to: "{{ collector_host }}"
       run_once: true
+      var:
+        anisble_become: false
+        anisble_connection: local
 
     - name: Gather system information
       set_fact:
