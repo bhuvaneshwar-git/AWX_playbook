@@ -11,6 +11,7 @@
   tasks:
 
     - name: Ensure export directory exists
+      become: false
       ansible.builtin.file:
         path: "{{ export_dir }}"
         state: directory
