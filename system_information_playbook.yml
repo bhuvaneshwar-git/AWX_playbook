@@ -11,9 +11,8 @@
 
   tasks:
     - name: Ensure export directory exists on collector
-      become: false
       file:
-        path: "{{ export_dir }}"
+        path: "{{ export_dir }}/sysinfo"
         state: directory
         mode: '0755'
       delegate_to: "{{ collector_host }}"
