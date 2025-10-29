@@ -50,7 +50,7 @@
   gather_facts: no
 
   vars:
-    export_dir: "/tmp/sysinfo_exports"
+    export_dir: "/home/bhuvaneshwar.g/"
     merged_file: "sys_info.json"
   
   tasks:
