@@ -5,21 +5,16 @@
   become: yes
 
   vars:
-    export_dir: "/var/lib/awx/projects"
+    export_dir: "/var/lib/awx/projects/sysinfo"
     export_filename: "system_info_{{ inventory_hostname }}.json"
-    collector_host: localhost
 
   tasks:
-    - name: Ensure export directory exists on collector
+    - name: Ensure export directory exists inside PVC
       file:
-        path: "{{ export_dir }}/sysinfo"
+        path: "{{ export_dir }}"
         state: directory
         mode: '0755'
-      delegate_to: "{{ collector_host }}"
       run_once: true
-      vars:
-        anisble_become: false
-        anisble_connection: local
 
     - name: Gather system information
       set_fact:
@@ -34,25 +29,23 @@
           ip_address: "{{ ansible_default_ipv4.address }}"
           timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
 
-    - name: Copy JSON data to collector
-      become: false
+    - name: Copy JSON data into PVC
       copy:
         dest: "{{ export_dir }}/{{ export_filename }}"
         content: "{{ sysinfo | to_nice_json }}"
-      delegate_to: "{{ collector_host }}"
 
     - name: Confirm export path
       debug:
-        msg: "✅ System info for {{ inventory_hostname }} saved to {{ export_dir }}/{{ export_filename }} on {{ collector_host }}"
+        msg: "✅ System info for {{ inventory_hostname }} saved to {{ export_dir }}/{{ export_filename }}"
 
 # ---------------- Second Play ----------------
-- name: Merge all collected system info JSON files on collector
+- name: Merge all collected system info JSON files
   hosts: localhost
   become: no
   gather_facts: no
 
   vars:
-    export_dir: "/var/lib/awx/projects"
+    export_dir: "/var/lib/awx/projects/sysinfo"
     merged_file: "sys_info.json"
 
   tasks:
