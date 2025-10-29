@@ -17,7 +17,7 @@
         mode: '0755'
       delegate_to: "{{ collector_host }}"
       run_once: true
-      var:
+      vars:
         anisble_become: false
         anisble_connection: local
 
