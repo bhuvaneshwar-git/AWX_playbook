@@ -52,8 +52,10 @@
   vars:
     export_dir: "/tmp/sysinfo_exports"
     merged_file: "sys_info.json"
-  
-  shell: |
+
+  tasks:
+    - name: Merge all JSON files using Python
+      shell: |
         python3 - <<'PYCODE'
         import os, json, glob
         export_dir = "{{ export_dir }}"
@@ -71,9 +73,9 @@
         with open(merged_path, "w") as out:
             json.dump(all_data, out, indent=2)
         PYCODE
-  args:
-       executable: /bin/bash
+      args:
+        executable: /bin/bash
 
-- name: Confirm merged file path
-  debug:
-     msg: "✅ All system info merged into {{ export_dir }}/{{ merged_file }}"
+    - name: Confirm merged file path
+      debug:
+        msg: "✅ All system info merged into {{ export_dir }}/{{ merged_file }}"
