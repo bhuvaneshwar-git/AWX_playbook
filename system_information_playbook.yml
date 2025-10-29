@@ -52,8 +52,13 @@
   vars:
     export_dir: "/tmp/sysinfo_exports"
     merged_file: "sys_info.json"
-
+  
   tasks:
+    -name: Ensure jq is installed
+    package:
+      name: jq
+      state: present
+    
     - name: Merge all JSON files into one
       #become_user: root
       shell: "cat {{ export_dir }}/*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
