@@ -5,7 +5,7 @@
   become: yes
 
   vars:
-    export_dir: "/tmp/sysinfo_exports"
+    export_dir: "/var/lib/projects/sysinfo_exports"
     export_filename: "system_info_{{ inventory_hostname }}.json"
     collector_host: localhost
 
