@@ -53,16 +53,24 @@
     export_dir: "/tmp/sysinfo_exports"
     merged_file: "sys_info.json"
   
-  tasks:
-    - name: Ensure jq is installed
-      become_user: root
-      package:
-        name: jq
-        state: present
-    
-    - name: Merge all JSON files into one
-      become_user: root
-      shell: "cat {{ export_dir }}/*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
+      shell: |
+        python3 - <<'PYCODE'
+        import os, json, glob
+        export_dir = "{{ export_dir }}"
+        merged_path = os.path.join(export_dir, "{{ merged_file }}")
+
+        all_data = []
+        for path in glob.glob(os.path.join(export_dir, "*.json")):
+            with open(path) as f:
+                try:
+                    data = json.load(f)
+                    all_data.append(data)
+                except json.JSONDecodeError:
+                    pass
+
+        with open(merged_path, "w") as out:
+            json.dump(all_data, out, indent=2)
+        PYCODE
       args:
         executable: /bin/bash
 
