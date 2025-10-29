@@ -5,7 +5,7 @@
   become: yes
 
   vars:
-    export_dir: "/mnt/sysinfo_exports"
+    export_dir: "/var/lib/awx/projects"
     export_filename: "system_info_{{ inventory_hostname }}.json"
     collector_host: localhost
 
@@ -50,7 +50,7 @@
   gather_facts: no
 
   vars:
-    export_dir: "/mnt/sysinfo_exports"
+    export_dir: "/var/lib/awx/projects"
     merged_file: "sys_info.json"
 
   tasks:
