@@ -76,4 +76,4 @@
 
 - name: Confirm merged file path
   debug:
-    msg: "✅ All system info merged into {{ export_dir }}/{{ merged_file }}"
+     msg: "✅ All system info merged into {{ export_dir }}/{{ merged_file }}"
