@@ -1,0 +1,39 @@
+---
+- name: Verify AppArmor compliance across hosts
+  hosts: all
+  gather_facts: no
+  tasks:
+
+    - name: Check if AppArmor package is installed
+      ansible.builtin.shell: dpkg -l | grep apparmor
+      register: apparmor_pkg
+      changed_when: false
+      failed_when: false
+
+    - name: Check if AppArmor is enabled in bootloader
+      ansible.builtin.shell: "grep -q 'apparmor=1' /proc/cmdline && grep -q 'security=apparmor' /proc/cmdline"
+      register: apparmor_boot
+      changed_when: false
+      failed_when: false
+
+    - name: Get AppArmor status
+      become_user: root
+      ansible.builtin.command: aa-status
+      register: aa_status
+      changed_when: false
+      failed_when: false
+
+    - name: Build compliance report
+      ansible.builtin.set_fact:
+        apparmor_report: |
+          Ensure AppArmor is installed - {{ 'yes (installed)' if apparmor_pkg.rc == 0 else 'no (not installed)' }}
+          Ensure AppArmor is enabled in the bootloader configuration - {{ 'yes' if apparmor_boot.rc == 0 else 'no (not configured)' }}
+          Ensure all AppArmor Profiles are in enforce or complain mode - {{ 'yes' if 'unconfined' not in aa_status.stdout else 'no (some unconfined)' }}
+          Ensure all AppArmor Profiles are enforcing - {{ 'yes' if 'profiles are in enforce mode' in aa_status.stdout else 'no (not all enforcing)' }}
+
+    - name: Show compliance summary
+      ansible.builtin.debug:
+        msg: |
+          Host: {{ inventory_hostname }}
+          {{ apparmor_report }}
+
