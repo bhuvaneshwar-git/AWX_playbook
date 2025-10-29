@@ -51,7 +51,7 @@
 
   vars: 
     become_user: root
-    export_dir: "/home/bhuvaneshwar.g/Documents/AWX/output"
+    export_dir: "/tmp/sysinfo_exports"
     merged_file: "sys_info.json"
   
   tasks:
