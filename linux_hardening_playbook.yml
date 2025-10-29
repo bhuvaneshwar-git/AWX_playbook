@@ -16,8 +16,8 @@
         path: "{{ export_dir }}"
         state: directory
         mode: '0755'
-        delegate_to: "{{ collector_host }}"
-        run_once: true
+      delegate_to: "{{ collector_host }}"
+      run_once: true
 
     - name: Check if AppArmor package is installed
       ansible.builtin.shell: dpkg -l | grep apparmor
