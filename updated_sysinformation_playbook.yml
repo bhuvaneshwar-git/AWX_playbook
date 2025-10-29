@@ -50,7 +50,7 @@
   gather_facts: no
 
   vars:
-    export_dir: "/home/bhuvaneshwar.g/sysinfo_exports"
+    export_dir: "/home/ansibleadmin/sysinfo_exports"
     merged_file: "sys_info.json"
   
   tasks:
