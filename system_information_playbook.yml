@@ -55,6 +55,7 @@
   
   tasks:
     - name: Ensure jq is installed
+      become_user: root
       package:
         name: jq
         state: present
