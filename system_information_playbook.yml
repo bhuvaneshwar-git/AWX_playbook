@@ -61,7 +61,7 @@
         state: present
     
     - name: Merge all JSON files into one
-      #become_user: root
+      become_user: root
       shell: "cat {{ export_dir }}/*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
       args:
         executable: /bin/bash
