@@ -46,7 +46,7 @@
 # ---------------- Second Play ----------------
 - name: Merge all collected system info JSON files on collector
   hosts: localhost
-  become: yes
+  become: false
   gather_facts: no
 
   vars:
