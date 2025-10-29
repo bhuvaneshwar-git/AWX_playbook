@@ -7,7 +7,7 @@
   vars:
     export_dir: "/tmp/sysinfo_exports"
     export_filename: "system_info_{{ inventory_hostname }}.json"
-    collector_host: localhost
+    collector_host: 192.168.2.111
 
   tasks:
     - name: Ensure export directory exists on collector
@@ -50,7 +50,7 @@
   gather_facts: no
 
   vars:
-    export_dir: "/tmp/sysinfo_exports"
+    export_dir: "/home/bhuvaneshwar.g/sysinfo_exports"
     merged_file: "sys_info.json"
   
   tasks:
