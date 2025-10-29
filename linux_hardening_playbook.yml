@@ -57,7 +57,7 @@
       ansible.builtin.fetch:
         src: "{{ export_dir }}/{{ export_filename }}"
         dest: "{{ export_dir }}/"
-        delegate_to: "{{ collector_host }}"
+      delegate_to: "{{ collector_host }}"
 
 - name: Merge all collected system info JSON files on collector
   hosts: 192.168.2.111
