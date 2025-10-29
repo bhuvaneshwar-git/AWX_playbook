@@ -47,11 +47,11 @@
           ensure_profiles_enforce_or_complain: "{{ 'yes' if 'unconfined' not in aa_status.stdout else 'no' }}"
           ensure_profiles_enforcing: "{{ 'yes' if 'profiles are in enforce mode' in aa_status.stdout else 'no' }}"
 
-    - name: Save JSON report locally on each host
-      ansible.builtin.copy:
-        dest: "{{ export_dir }}/{{ export_filename }}"
-        content: "{{ apparmor_report | to_nice_json }}"
-        mode: '0644'
+    #- name: Save JSON report locally on each host
+     # ansible.builtin.copy:
+      #  dest: "{{ export_dir }}/{{ export_filename }}"
+       # content: "{{ apparmor_report | to_nice_json }}"
+        #mode: '0644'
 
     - name: Copy JSON report to collector host
       become: false
