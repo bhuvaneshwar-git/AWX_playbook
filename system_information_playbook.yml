@@ -7,7 +7,7 @@
   vars:
     export_dir: "/tmp/sysinfo_exports"
     export_filename: "system_info_{{ inventory_hostname }}.json"
-    collector_host: 192.168.2.111
+    collector_host: localhost
 
   tasks:
     - name: Ensure export directory exists on collector
@@ -43,7 +43,7 @@
 
 # ---------------- Second Play ----------------
 - name: Merge all collected system info JSON files on collector
-  hosts: 192.168.2.111
+  hosts: localhost
   become: yes
   gather_facts: no
 
