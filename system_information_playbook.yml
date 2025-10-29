@@ -5,7 +5,7 @@
   become: yes
 
   vars:
-    export_dir: "/var/lib/awx/result"
+    export_dir: "/var/result"
     export_filename: "system_info_{{ inventory_hostname }}.json"
 
   tasks:
@@ -50,7 +50,7 @@
   gather_facts: no
 
   vars:
-    export_dir: "/var/lib/awx/result"
+    export_dir: "/var/result"
     merged_file: "sys_info.json"
 
   tasks:
