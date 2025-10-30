@@ -57,7 +57,8 @@
   become: yes
   gather_facts: no
 
-  vars: 
+  vars:
+    become_user: root 
     export_dir: "linux_hardening"
     merged_file: "linux_harden_report.json"
   
