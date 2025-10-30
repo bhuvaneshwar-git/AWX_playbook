@@ -60,9 +60,9 @@
   gather_facts: no
 
   vars:
-    become_user: root 
     export_dir: "/home/ansibleadmin/Documents/linux_hardening"
     merged_file: "linux_harden_report.json"
+    become_user: root     
   
   tasks:
     - name: Merge all JSON files into one
