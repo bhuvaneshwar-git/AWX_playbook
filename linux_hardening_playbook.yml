@@ -63,7 +63,7 @@
   
   tasks:
     - name: Merge all JSON files into one
-      shell: "jq -s '.' {{ export_dir }}/*.json > {{ export_dir }}/{{ merged_file }}"
+      shell: "cat {{ export_dir }}/*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
       args:
         executable: /bin/bash
 
