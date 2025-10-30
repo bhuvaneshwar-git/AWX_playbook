@@ -59,7 +59,7 @@
 
   vars:
     become_user: root 
-    export_dir: "linux_hardening"
+    export_dir: "/home/ansibleadmin/Documents/linux_hardening"
     merged_file: "linux_harden_report.json"
   
   tasks:
