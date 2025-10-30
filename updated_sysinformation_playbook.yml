@@ -5,7 +5,7 @@
   become: yes
 
   vars:
-    export_dir: "/home/ansibleadmin/Documents"
+    export_dir: "/home/ansibleadmin/Documents/system_inforamtion"
     export_filename: "system_info_{{ inventory_hostname }}.json"
     collector_host: 192.168.2.111
 
@@ -51,7 +51,7 @@
 
   vars: 
     become_user: root
-    export_dir: "/home/ansibleadmin/Documents"
+    export_dir: "/home/ansibleadmin/Documents/system_inforamtion"
     merged_file: "system_info.json"
   
   tasks:
