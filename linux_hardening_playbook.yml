@@ -43,13 +43,14 @@
           inventory_id: "{{ ansible_hostname }}"
           ip_address: "{{ inventory_hostname }}"
           ensure_apparmor_installed: "{{ 'yes' if apparmor_pkg.rc == 0 else 'no' }}"
-          ensure_apparmor_enabled_bootloader: "{{ 'yes' if apparmor_boot.rc == 0 else 'no' }}"
-          remediation: >-
-          {% if apparmor_boot.rc != 0 %}
-            Edit GRUB config (/etc/default/grub) and add 'apparmor=1 security=apparmor' to GRUB_CMDLINE_LINUX, then run 'update-grub' and reboot
-          {% else %}
-            No action needed
-          {% endif %}
+          ensure_apparmor_enabled_bootloader: 
+            status: "{{ 'yes' if apparmor_boot.rc == 0 else 'no' }}"
+            remediation: >-
+             {% if apparmor_boot.rc != 0 %}
+             Edit GRUB config (/etc/default/grub) and add 'apparmor=1 security=apparmor' to GRUB_CMDLINE_LINUX, then run 'update-grub' and reboot
+             {% else %}
+             No action needed
+             {% endif %}
           ensure_profiles_enforce_or_complain: "{{ 'yes' if 'unconfined' not in aa_status.stdout else 'no' }}"
           ensure_profiles_enforcing: "{{ 'yes' if 'profiles are in enforce mode' in aa_status.stdout else 'no' }}"
 
