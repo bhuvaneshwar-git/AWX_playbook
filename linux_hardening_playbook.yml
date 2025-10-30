@@ -40,7 +40,7 @@
     - name: Build compliance report (JSON object)
       ansible.builtin.set_fact:
         apparmor_report:
-          host: "{{ ansible_hostname }}"
+          inventory_id: "{{ ansible_hostname }}"
           ip_address: "{{ inventory_hostname }}"
           ensure_apparmor_installed: "{{ 'yes' if apparmor_pkg.rc == 0 else 'no' }}"
           ensure_apparmor_enabled_bootloader: "{{ 'yes' if apparmor_boot.rc == 0 else 'no' }}"
