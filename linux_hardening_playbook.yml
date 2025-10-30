@@ -1,7 +1,8 @@
 ---
 - name: Verify AppArmor compliance across hosts
   hosts: all
-  gather_facts: no
+  gather_facts: yes
+  become: yes
 
   vars:
     export_dir: "/home/ansibleadmin/Documents/linux_hardening"
