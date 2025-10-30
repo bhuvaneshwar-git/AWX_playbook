@@ -42,7 +42,14 @@
         apparmor_report:
           inventory_id: "{{ ansible_hostname }}"
           ip_address: "{{ inventory_hostname }}"
-          ensure_apparmor_installed: "{{ 'yes' if apparmor_pkg.rc == 0 else 'no' }}"
+          ensure_apparmor_installed: 
+            status: "{{ 'yes' if apparmor_pkg.rc == 0 else 'no' }}"
+            remediation: >-
+             {% if apparmor_pkg.rc != 0 %}
+             Install AppArmor: run 'apt-get install apparmor apparmor-utils'
+             {% else %}
+             No action needed
+             {% endif %}
           ensure_apparmor_enabled_bootloader: 
             status: "{{ 'yes' if apparmor_boot.rc == 0 else 'no' }}"
             remediation: >-
@@ -51,8 +58,22 @@
              {% else %}
              No action needed
              {% endif %}
-          ensure_profiles_enforce_or_complain: "{{ 'yes' if 'unconfined' not in aa_status.stdout else 'no' }}"
-          ensure_profiles_enforcing: "{{ 'yes' if 'profiles are in enforce mode' in aa_status.stdout else 'no' }}"
+          ensure_profiles_enforce_or_complain: 
+            status: "{{ 'yes' if 'unconfined' not in aa_status.stdout else 'no' }}"
+            remediation: >-
+             {% if 'unconfined' in aa_status.stdout %}
+             Load or create AppArmor profiles for unconfined processes using 'aa-genprof' or 'aa-enforce'.
+             {% else %}
+             No action needed
+             {% endif %}
+          ensure_profiles_enforcing: 
+            status: "{{ 'yes' if 'profiles are in enforce mode' in aa_status.stdout else 'no' }}"
+            remediation: >-
+             {% if 'profiles are in enforce mode' not in aa_status.stdout %}
+             Switch profiles to enforce mode using 'aa-enforce /etc/apparmor.d/*'.
+             {% else %}
+             No action needed
+             {% endif %}
 
     - name: Save JSON report directly on collector
       ansible.builtin.copy:
