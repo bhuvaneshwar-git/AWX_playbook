@@ -112,3 +112,4 @@ solution  -
 - step 1 : sudo usermod -aG docker $USER ( grants the necessary permissions to access the Docker socket. )
 - step 2 : newgrp docker
 - step 3 : docker ps ( verify that you can run Docker commands without sudo )
+- step 4 : minikube start 
