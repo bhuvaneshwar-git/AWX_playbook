@@ -113,3 +113,13 @@ solution  -
 - step 2 : newgrp docker
 - step 3 : docker ps ( verify that you can run Docker commands without sudo )
 - step 4 : minikube start 
+
+
+
+To change the admih password - 
+step 1 : kubectl get pods -n awx | grep awx-web
+step 2 :  kubectl exec -it <awx-web-podname> -n awx -- bash
+step 3 : awx-manage changepassword admin
+step 4 : exit
+step 5 : ctl + c and again start kubectl port-forward svc/awx-service -n awx 8080:80
+
