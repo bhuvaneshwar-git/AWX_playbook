@@ -1,0 +1,13 @@
+apiVersion: awx.ansible.com/v1beta1
+kind: AWX
+metadata:
+  name: awx
+  namespace: awx
+spec:
+  service_type: nodeport
+  ingress_type: none
+  hostname: awx.example.com
+  admin_user: admin
+  admin_password_secret: awx-admin-password
+  image: quay.io/ansible/awx
+  image_version: 21.1.0
