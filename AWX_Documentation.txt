@@ -123,3 +123,116 @@ step 3 : awx-manage changepassword admin
 step 4 : exit
 step 5 : ctl + c and again start kubectl port-forward svc/awx-service -n awx 8080:80
 
+In this step-by-step video, we will show you *how to install Ansible AWX on a Kubernetes Cluster* — the open-source version of **Red Hat Ansible Tower**.
+
+By the end of this tutorial, you will have a fully functional *AWX instance* running in your Kubernetes environment.
+
+---
+
+### 📌 *What is AWX?*
+
+AWX is the upstream open-source project of Red Hat Ansible Tower.
+It provides a web-based UI, REST API, and task engine for managing your Ansible automation.
+It allows you to manage inventories, credentials, and jobs — all from a centralized dashboard.
+Best of all, it's *free and open-source!*
+
+---
+
+### 🧰 *Prerequisites:*
+
+✅ Running Kubernetes cluster (Minikube, Kind, or Production-grade)
+✅ `kubectl` configured
+✅ Helm v3 installed
+✅ Persistent Volume support for AWX data
+
+---
+
+### 🛠️ *Installation Steps Covered:*
+
+1. Deploy AWX Operator using Helm
+2. Create StorageClass & PersistentVolume
+3. Create and apply AWX Custom Resource YAML
+4. Extract admin credentials from Kubernetes Secret
+5. Access AWX web UI and log in
+
+---
+
+### 📂 *Useful Commands Covered in Video:*
+
+# Add Helm Repo and Install AWX Operator
+helm repo add awx-operator 'https://ansible-commun...​
+helm install ansible-awx-operator awx-operator/awx-operator -n awx --create-namespace
+
+# Create StorageClass and PersistentVolume
+
+cat awxstorage-class.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+  namespace: awx
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+
+cat awx-pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  namespace: awx
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /mnt/storage
+
+kubectl apply -f awxstorage-class.yaml
+kubectl apply -f awx-pv.yaml
+
+# Deploy AWX Instance
+cat ansible-awx.yaml
+apiVersion: awx.ansible.com/v1beta1
+kind: AWX
+metadata:
+  name: ansible-awx
+  namespace: awx
+spec:
+  service_type: nodeport
+  postgres_storage_class: local-storage
+
+kubectl apply -f ansible-awx.yaml
+
+# Extract Admin Password
+kubectl get secret ansible-awx-admin-password -o jsonpath="{.data.password}" -n awx | base64 --decode ; echo```
+
+---
+
+### 🌐 *Login to AWX Web UI*
+
+Navigate to the NodePort exposed by your Kubernetes cluster
+Username: `admin`
+Password: (from the Kubernetes Secret)
+
+---
+
+🎯 Once inside, you can:
+
+Add Inventories
+Configure Credentials
+Launch and Monitor Ansible Jobs
+
+---
+
+💡 Don’t forget to configure *persistent backups**, **external databases**, and **Git/Vault integrations* for production setups!
+
+---
+
+👍 If you found this tutorial helpful, please *Like**, **Subscribe**, and hit the **🔔 bell icon* for more DevOps and Linux tutorials.
+
+💬 Drop a comment if you'd like a follow-up video on AWX Projects, Inventories, or Job Templates!
+
+#AnsibleAWX​ #Kubernetes​ #DevOps​ #AnsibleTower​ #AWX​ #LinuxTutorial​ #Helm​ #OpenSource​ #Automation​ #RedHatAnsible​
