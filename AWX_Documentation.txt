@@ -3,6 +3,7 @@ Awx Documentation
 AWX Operators( Anisble AWx ) via kuberenetes 
 Official Documentation - https://ansible.readthedocs.io/projects/awx-operator/en/latest/installation/basic-install.html
 Ansible playboook Documentation - https://medium.com/@nbkumar2103/-d81b8801763a
+working link - https://mattadam.com/2024/05/01/install-awx-on-ubuntu-24/
 
 Prerequisites - 
 1) Kubernetes cluster ( minikube, kind, or k3s )
