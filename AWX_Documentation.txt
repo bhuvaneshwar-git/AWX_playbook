@@ -43,6 +43,8 @@ kubectl create ns awx
 step 7 - # Deploy operator
 make deploy NAMESPACE=awx
 
+note : tro delete the pods use this command (  kubectl delete ns awx --force --grace-period=0 )
+
 step 8 - kubectl get pods -n awx
 
 note - check the awx-operator-controller-manager is running 
