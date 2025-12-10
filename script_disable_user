@@ -1,0 +1,10 @@
+$OU = "OU=Disabled Users,DC=domain,DC=com"
+$Days = 30
+$DisabledSince = (Get-Date).AddDays(-$Days)
+
+$Users = Search-ADAccount -AccountDisabled -UsersOnly -SearchBase $OU |
+         Where-Object { $_.whenChanged -lt $DisabledSince }
+
+foreach ($User in $Users) {
+    Remove-ADUser -Identity $User.DistinguishedName -Confirm:$false
+}
