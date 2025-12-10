@@ -28,128 +28,241 @@
       set_fact:
         sshd_text: "{{ sshd_raw.content | b64decode }}"
 
-    ####################################################
-    # SSH CONFIG CHECK FUNCTIONS
-    ####################################################
+    # ------------------------------------------------------------------
+    # SSH CHECKS
+    # ------------------------------------------------------------------
 
-    - name: Check permission on sshd_config
+    - name: Check permissions of sshd_config
       stat:
-        path: "{{ sshd_config }}"
-      register: sshd_perm
-
-    - name: SSH private keys permission check
-      ansible.builtin.shell: "ls -l /etc/ssh/*_key | awk '{print $1,$9}'"
-      register: ssh_keys_perm
+        path: /etc/ssh/sshd_config
+      register: sshd_config_perm
       changed_when: false
+      failed_when: false
 
-    - name: Check individual sshd parameters
-      set_fact:
-        ssh_checks:
-          sshd_permissions_correct: "{{ 'yes' if sshd_perm.stat.mode == '0600' or sshd_perm.stat.mode == '0640' else 'no' }}"
-          sshd_banner_configured: "{{ 'yes' if sshd_text is search('^Banner') else 'no' }}"
-          sshd_ciphers_configured: "{{ 'yes' if sshd_text is search('^Ciphers') else 'no' }}"
-          sshd_kex_configured: "{{ 'yes' if sshd_text is search('^KexAlgorithms') else 'no' }}"
-          sshd_macs_configured: "{{ 'yes' if sshd_text is search('^MACs') else 'no' }}"
-          sshd_access_configured: "{{ 'yes' if sshd_text is search('AllowUsers|AllowGroups|DenyUsers|DenyGroups') else 'no' }}"
-          sshd_clientalive_interval: "{{ 'yes' if sshd_text is search('ClientAliveInterval') else 'no' }}"
-          sshd_clientalive_max: "{{ 'yes' if sshd_text is search('ClientAliveCountMax') else 'no' }}"
-          sshd_disable_forwarding: "{{ 'yes' if sshd_text is search('DisableForwarding yes') else 'no' }}"
-          sshd_gssapi_disabled: "{{ 'yes' if sshd_text is search('GSSAPIAuthentication no') else 'no' }}"
-          sshd_hostbased_disabled: "{{ 'yes' if sshd_text is search('HostbasedAuthentication no') else 'no' }}"
-          sshd_ignorerhosts_enabled: "{{ 'yes' if sshd_text is search('IgnoreRhosts yes') else 'no' }}"
-          sshd_logingracetime_configured: "{{ 'yes' if sshd_text is search('LoginGraceTime') else 'no' }}"
-          sshd_loglevel_configured: "{{ 'yes' if sshd_text is search('^LogLevel') else 'no' }}"
-          sshd_maxauthtries_configured: "{{ 'yes' if sshd_text is search('MaxAuthTries') else 'no' }}"
-          sshd_maxsessions_configured: "{{ 'yes' if sshd_text is search('MaxSessions') else 'no' }}"
-          sshd_maxstartups_configured: "{{ 'yes' if sshd_text is search('MaxStartups') else 'no' }}"
-          sshd_empty_password_disabled: "{{ 'yes' if sshd_text is search('PermitEmptyPasswords no') else 'no' }}"
-          sshd_root_login_disabled: "{{ 'yes' if sshd_text is search('PermitRootLogin no') else 'no' }}"
-          sshd_userenv_disabled: "{{ 'yes' if sshd_text is search('PermitUserEnvironment no') else 'no' }}"
-          sshd_usepam_enabled: "{{ 'yes' if sshd_text is search('UsePAM yes') else 'no' }}"
+    - name: Check SSH private key file permissions
+      shell: "find /etc/ssh -name '*_key' -type f -exec stat -c '%a %n' {} \\;"
+      register: ssh_key_perm
+      changed_when: false
+      failed_when: false
 
-    ####################################################
-    # BUILD JSON REPORT
-    ####################################################
-
-    - name: Build SSH Access Control Compliance Report
+    - name: Build SSH Access Control compliance report
       set_fact:
         ssh_report:
           inventory_id: "{{ ansible_hostname }}"
           ip_address: "{{ inventory_hostname }}"
-          sshd_config:
-            correct_permissions:
-              status: "{{ ssh_checks.sshd_permissions_correct }}"
-              remediation: "Set permissions using: chmod 600 /etc/ssh/sshd_config"
-            private_key_permissions:
-              status: "{{ 'yes' if '------' in ssh_keys_perm.stdout else 'no' }}"
-              remediation: "Set private key permissions: chmod 600 /etc/ssh/*_key"
-            sshd_access_configured:
-              status: "{{ ssh_checks.sshd_access_configured }}"
-              remediation: "Configure AllowUsers/Groups or DenyUsers/Groups in sshd_config"
-            sshd_banner_configured:
-              status: "{{ ssh_checks.sshd_banner_configured }}"
-              remediation: "Add Banner /etc/issue.net"
-            sshd_ciphers:
-              status: "{{ ssh_checks.sshd_ciphers_configured }}"
-              remediation: "Set strong ciphers in sshd_config"
-            sshd_kex:
-              status: "{{ ssh_checks.sshd_kex_configured }}"
-              remediation: "Set secure key exchange algorithms"
-            sshd_macs:
-              status: "{{ ssh_checks.sshd_macs_configured }}"
-              remediation: "Set secure MAC algorithms"
-            sshd_forwarding_disabled:
-              status: "{{ ssh_checks.sshd_disable_forwarding }}"
-              remediation: "Add DisableForwarding yes"
-            gssapi_disabled:
-              status: "{{ ssh_checks.sshd_gssapi_disabled }}"
-              remediation: "Set GSSAPIAuthentication no"
-            hostbased_disabled:
-              status: "{{ ssh_checks.sshd_hostbased_disabled }}"
-              remediation: "Set HostbasedAuthentication no"
-            ignore_rhosts:
-              status: "{{ ssh_checks.sshd_ignorerhosts_enabled }}"
-              remediation: "Set IgnoreRhosts yes"
-            login_grace_time:
-              status: "{{ ssh_checks.sshd_logingracetime_configured }}"
-              remediation: "Set LoginGraceTime 60"
-            log_level:
-              status: "{{ ssh_checks.sshd_loglevel_configured }}"
-              remediation: "Set LogLevel VERBOSE"
-            max_auth_tries:
-              status: "{{ ssh_checks.sshd_maxauthtries_configured }}"
-              remediation: "Set MaxAuthTries 3 or 4"
-            max_sessions:
-              status: "{{ ssh_checks.sshd_maxsessions_configured }}"
-              remediation: "Set MaxSessions 10"
-            max_startups:
-              status: "{{ ssh_checks.sshd_maxstartups_configured }}"
-              remediation: "Set MaxStartups 10:30:100"
-            empty_password_disabled:
-              status: "{{ ssh_checks.sshd_empty_password_disabled }}"
-              remediation: "Set PermitEmptyPasswords no"
-            root_login_disabled:
-              status: "{{ ssh_checks.sshd_root_login_disabled }}"
-              remediation: "Set PermitRootLogin no"
-            user_env_disabled:
-              status: "{{ ssh_checks.sshd_userenv_disabled }}"
-              remediation: "Set PermitUserEnvironment no"
-            use_pam:
-              status: "{{ ssh_checks.sshd_usepam_enabled }}"
-              remediation: "Set UsePAM yes"
+
+          ensure_sshd_config_permissions:
+            status: "{{ 'yes' if sshd_config_perm.stat.mode in ['0600','0640'] else 'no' }}"
+            remediation: >-
+              {% if sshd_config_perm.stat.mode not in ['0600','0640'] %}
+              Run: chmod 600 /etc/ssh/sshd_config
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_private_keys_permissions:
+            status: "{{ 'yes' if (ssh_key_perm.stdout | regex_search('600')) else 'no' }}"
+            remediation: >-
+              {% if not (ssh_key_perm.stdout | regex_search('600')) %}
+              Set permissions using: chmod 600 /etc/ssh/*_key
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_banner:
+            status: "{{ 'yes' if sshd_text | regex_search('^Banner') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('^Banner')) %}
+              Add 'Banner /etc/issue.net' in sshd_config.
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_ciphers:
+            status: "{{ 'yes' if sshd_text | regex_search('^Ciphers') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('^Ciphers')) %}
+              Add strong ciphers to sshd_config.
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_kexalgorithms:
+            status: "{{ 'yes' if sshd_text | regex_search('^KexAlgorithms') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('^KexAlgorithms')) %}
+              Add secure KexAlgorithms.
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_macs:
+            status: "{{ 'yes' if sshd_text | regex_search('^MACs') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('^MACs')) %}
+              Add secure MACs.
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_access_configured:
+            status: "{{ 'yes' if sshd_text | regex_search('AllowUsers|DenyUsers|AllowGroups|DenyGroups') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('AllowUsers|DenyUsers|AllowGroups|DenyGroups')) %}
+              Add AllowUsers/DenyUsers in sshd_config.
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_clientaliveinterval:
+            status: "{{ 'yes' if sshd_text | regex_search('ClientAliveInterval') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('ClientAliveInterval')) %}
+              Add ClientAliveInterval 300
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_clientalivecountmax:
+            status: "{{ 'yes' if sshd_text | regex_search('ClientAliveCountMax') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('ClientAliveCountMax')) %}
+              Add ClientAliveCountMax 3
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_disableforwarding:
+            status: "{{ 'yes' if sshd_text | regex_search('DisableForwarding yes') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('DisableForwarding yes')) %}
+              Add DisableForwarding yes
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_gssapi_auth_disabled:
+            status: "{{ 'yes' if sshd_text | regex_search('GSSAPIAuthentication no') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('GSSAPIAuthentication no')) %}
+              Add GSSAPIAuthentication no
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_hostbased_auth_disabled:
+            status: "{{ 'yes' if sshd_text | regex_search('HostbasedAuthentication no') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('HostbasedAuthentication no')) %}
+              Add HostbasedAuthentication no
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_ignore_rhosts:
+            status: "{{ 'yes' if sshd_text | regex_search('IgnoreRhosts yes') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('IgnoreRhosts yes')) %}
+              Add IgnoreRhosts yes
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_login_grace_time:
+            status: "{{ 'yes' if sshd_text | regex_search('LoginGraceTime') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('LoginGraceTime')) %}
+              Add LoginGraceTime 60
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_loglevel:
+            status: "{{ 'yes' if sshd_text | regex_search('^LogLevel') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('^LogLevel')) %}
+              Add LogLevel VERBOSE
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_maxauthtries:
+            status: "{{ 'yes' if sshd_text | regex_search('MaxAuthTries') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('MaxAuthTries')) %}
+              Add MaxAuthTries 3
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_maxsessions:
+            status: "{{ 'yes' if sshd_text | regex_search('MaxSessions') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('MaxSessions')) %}
+              Add MaxSessions 10
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_maxstartups:
+            status: "{{ 'yes' if sshd_text | regex_search('MaxStartups') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('MaxStartups')) %}
+              Add MaxStartups 10:30:100
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_empty_passwords_disabled:
+            status: "{{ 'yes' if sshd_text | regex_search('PermitEmptyPasswords no') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('PermitEmptyPasswords no')) %}
+              Add PermitEmptyPasswords no
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_rootlogin_disabled:
+            status: "{{ 'yes' if sshd_text | regex_search('PermitRootLogin no') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('PermitRootLogin no')) %}
+              Add PermitRootLogin no
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_userenv_disabled:
+            status: "{{ 'yes' if sshd_text | regex_search('PermitUserEnvironment no') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('PermitUserEnvironment no')) %}
+              Add PermitUserEnvironment no
+              {% else %}
+              No action needed
+              {% endif %}
+
+          ensure_sshd_usepam:
+            status: "{{ 'yes' if sshd_text | regex_search('UsePAM yes') else 'no' }}"
+            remediation: >-
+              {% if not (sshd_text | regex_search('UsePAM yes')) %}
+              Add UsePAM yes
+              {% else %}
+              No action needed
+              {% endif %}
+
+    # ------------------------------------------------------------------
+    # SAVE REPORT
+    # ------------------------------------------------------------------
 
     - name: Save JSON report on collector
-      ansible.builtin.copy:
+      copy:
         dest: "{{ export_dir }}/ssh_access_report_{{ inventory_hostname }}.json"
         content: "{{ ssh_report | to_nice_json }}"
         mode: '0644'
       delegate_to: "{{ collector_host }}"
 
-#############################################################
-# MERGING JSON FILES (Collectors Only)
-#############################################################
+# MERGE ------------------------------------------------------------------
 
-- name: Merge all collected SSH compliance files
+- name: Merge all SSH JSON reports
   hosts: 192.168.2.129
   become: yes
   gather_facts: no
@@ -159,11 +272,11 @@
     merged_file: "ssh_access_merged.json"
 
   tasks:
-    - name: Merge all SSH JSON reports
-      ansible.builtin.shell: "cat {{ export_dir }}/ssh_access_report_*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
+    - name: Merge reports
+      shell: "jq -s '.' {{ export_dir }}/ssh_access_report_*.json > {{ export_dir }}/{{ merged_file }}"
       args:
         executable: /bin/bash
 
     - name: Confirm merged file path
       debug:
-        msg: "✅ SSH Access Control report merged → {{ export_dir }}/{{ merged_file }}"
+        msg: "SSH compliance report merged → {{ export_dir }}/{{ merged_file }}"
