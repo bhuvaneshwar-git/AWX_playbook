@@ -265,12 +265,12 @@
 - name: Merge all SSH JSON reports
   hosts: 192.168.2.129
   become: yes
-  gather_facts: no
+  become_user: root
 
   vars:
     export_dir: "/home/ansibleadmin/Documents/linux_hardening"
     merged_file: "access_control.json"
-    become_user: root
+    
 
   tasks:
     - name: Merge reports
