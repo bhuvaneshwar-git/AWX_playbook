@@ -269,7 +269,7 @@
 
   vars:
     export_dir: "/home/ansibleadmin/Documents/linux_hardening"
-    merged_file: "ssh_access_merged.json"
+    merged_file: "access_control.json"
     become_user: root
 
   tasks:
