@@ -1,0 +1,7 @@
+---
+- name: Docker installation
+  hosts: all
+  become: yes
+  - name: Check Docker installed  or not
+    state: present
+---
