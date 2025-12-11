@@ -19,6 +19,25 @@
       delegate_to: "{{ collector_host }}"
       run_once: true
 
+    # ------------------------------------------------------------------
+    # REQUIRED (You missed these)
+    # ------------------------------------------------------------------
+
+    - name: Check sshd_config file permissions
+      ansible.builtin.stat:
+        path: "{{ sshd_config }}"
+      register: sshd_config_perm
+
+    - name: Check SSH private key permissions
+      shell: "ls -l /etc/ssh/*_key 2>/dev/null"
+      register: ssh_key_perm
+      failed_when: false
+      changed_when: false
+
+    # ------------------------------------------------------------------
+    # READ CONFIG
+    # ------------------------------------------------------------------
+
     - name: Read sshd_config
       ansible.builtin.slurp:
         src: "{{ sshd_config }}"
@@ -29,7 +48,7 @@
         sshd_text: "{{ sshd_raw.content | b64decode }}"
 
     # ------------------------------------------------------------------
-    # SSH CHECKS
+    # BUILD REPORT
     # ------------------------------------------------------------------
 
     - name: Build ordered SSH Access Control compliance report
@@ -176,7 +195,6 @@
               }
             })
           }}
-
 
     # ------------------------------------------------------------------
     # SAVE REPORT
