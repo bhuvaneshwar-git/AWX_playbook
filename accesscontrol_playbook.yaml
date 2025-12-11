@@ -276,7 +276,7 @@
 
   tasks:
     - name: Merge reports
-      shell: "cat {{ export_dir }}/*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
+      shell: "cat {{ export_dir }}/ssh_access_report_*.json | jq -s '.' > {{ export_dir }}/{{ merged_file }}"
       args:
         executable: /bin/bash
 
