@@ -5,8 +5,8 @@
   become_user: root
 
   vars:
-    wallpaper_source: "wallpaper.png"        # Source inside AWX project
-    wallpaper_dest: "/usr/share/backgrounds/company_wallpaper.png"
+    wallpaper_source: "kali-pic.png"        # Source inside AWX project
+    wallpaper_dest: "/usr/share/backgrounds/kali_wallpaper.png"
     dconf_dir: "/etc/dconf/db/local.d"
     dconf_file: "00-wallpaper"
     dconf_lock_dir: "/etc/dconf/db/local.d/locks"
