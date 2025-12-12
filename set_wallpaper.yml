@@ -5,7 +5,7 @@
   become_user: root
 
   vars:
-    wallpaper_source: "wallpaper.png"       # Path inside in our Ansible project
+    wallpaper_source: "wallpaper.png"        # Source inside AWX project
     wallpaper_dest: "/usr/share/backgrounds/company_wallpaper.png"
     dconf_dir: "/etc/dconf/db/local.d"
     dconf_file: "00-wallpaper"
@@ -13,9 +13,19 @@
 
   tasks:
 
-    # -------------------------
+    # ---------------------------------------------------
+    # 0. Install required dconf tools (prevents silent failure)
+    # ---------------------------------------------------
+    - name: Install dconf utilities
+      ansible.builtin.package:
+        name:
+          - dconf-cli
+          - dconf-service
+        state: present
+
+    # ---------------------------------------------------
     # 1. Ensure required directories exist
-    # -------------------------
+    # ---------------------------------------------------
     - name: Ensure dconf config directory exists
       ansible.builtin.file:
         path: "{{ dconf_dir }}"
@@ -28,9 +38,9 @@
         state: directory
         mode: '0755'
 
-    # -------------------------
+    # ---------------------------------------------------
     # 2. Copy wallpaper to system directory
-    # -------------------------
+    # ---------------------------------------------------
     - name: Copy wallpaper to system directory
       ansible.builtin.copy:
         src: "{{ wallpaper_source }}"
@@ -39,12 +49,10 @@
         group: root
         mode: '0644'
 
-    # -------------------------
-    # 3. Define system-wide wallpaper defaults
-    # -------------------------
+    # ---------------------------------------------------
+    # 3. Create system-wide GNOME wallpaper config
+    # ---------------------------------------------------
     - name: Create GNOME system-wide wallpaper config
-      become: yes
-      become_user: root
       ansible.builtin.copy:
         dest: "{{ dconf_dir }}/{{ dconf_file }}"
         content: |
@@ -55,11 +63,10 @@
         owner: root
         group: root
         mode: '0644'
-  
 
-    # -------------------------
-    # 4. Lock wallpaper settings so users cannot change
-    # -------------------------
+    # ---------------------------------------------------
+    # 4. Create lockfile to prevent user overriding wallpaper
+    # ---------------------------------------------------
     - name: Create GNOME wallpaper lock file
       ansible.builtin.copy:
         dest: "{{ dconf_lock_dir }}/{{ dconf_file }}"
@@ -68,24 +75,37 @@
           /org/gnome/desktop/background/picture-uri-dark
         owner: root
         group: root
-        mode: '0444'   # changed to read-only
+        mode: '0444'
 
-    # -------------------------
-    # 5. Update dconf database to apply system defaults
-    # -------------------------
+    # ---------------------------------------------------
+    # 5. Remove existing user wallpaper overrides (CRITICAL FIX)
+    # ---------------------------------------------------
+    - name: Reset user wallpaper override (ignore errors if user not logged in)
+      ansible.builtin.shell: |
+        dconf reset /org/gnome/desktop/background/picture-uri || true
+        dconf reset /org/gnome/desktop/background/picture-uri-dark || true
+      ignore_errors: yes
+
+    # ---------------------------------------------------
+    # 6. Apply dconf database changes
+    # ---------------------------------------------------
     - name: Update dconf database
       ansible.builtin.command: dconf update
-      become: yes
-      become_user: root
 
+    # ---------------------------------------------------
+    # 7. Reload GNOME session to apply wallpaper immediately (no logout needed)
+    # ---------------------------------------------------
+    - name: Reload GNOME shell for active user (safe)
+      ansible.builtin.shell: |
+        pgrep -u $(whoami) gnome-shell && killall -3 gnome-shell || true
+      ignore_errors: yes
 
-
-    # -------------------------
-    # 6. Final confirmation message
-    # -------------------------
+    # ---------------------------------------------------
+    # 8. Final message
+    # ---------------------------------------------------
     - name: Display completion message
       ansible.builtin.debug:
-        msg: >
-          Wallpaper has been set to {{ wallpaper_dest }} and locked system-wide.
+        msg: "Company wallpaper successfully deployed + locked system-wide on GNOME."
+
           Changes will apply automatically at next GNOME login for all users.
 
