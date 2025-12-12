@@ -107,5 +107,4 @@
       ansible.builtin.debug:
         msg: "Company wallpaper successfully deployed + locked system-wide on GNOME."
 
-          Changes will apply automatically at next GNOME login for all users.
 
