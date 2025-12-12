@@ -1,0 +1,33 @@
+---
+- name: Force GNOME wallpaper immediately for logged-in users
+  hosts: all
+  become: yes
+
+  vars:
+    wallpaper_dest: "/usr/share/backgrounds/company_wallpaper.png"
+
+  tasks:
+
+    # 1. Find all GUI sessions
+    - name: Get active GUI sessions
+      ansible.builtin.command: |
+        loginctl list-sessions --no-legend | awk '{print $1}'
+      register: session_list
+      changed_when: false
+
+    # 2. Apply wallpaper to each session (safe, no shell restart)
+    - name: Apply wallpaper for each logged-in user session
+      ansible.builtin.shell: |
+        user=$(loginctl show-session {{ item }} -p Name --value)
+        uid=$(id -u "$user")
+        export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus"
+
+        gsettings set org.gnome.desktop.background picture-uri 'file://{{ wallpaper_dest }}'
+        gsettings set org.gnome.desktop.background picture-uri-dark 'file://{{ wallpaper_dest }}'
+      loop: "{{ session_list.stdout_lines }}"
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Output done
+      ansible.builtin.debug:
+        msg: "Wallpaper updated immediately for all logged-in GNOME users."
