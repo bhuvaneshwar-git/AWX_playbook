@@ -210,33 +210,3 @@ spec:
 
 kubectl apply -f ansible-awx.yaml
 
-# Extract Admin Password
-kubectl get secret ansible-awx-admin-password -o jsonpath="{.data.password}" -n awx | base64 --decode ; echo```
-
----
-
-### 🌐 *Login to AWX Web UI*
-
-Navigate to the NodePort exposed by your Kubernetes cluster
-Username: `admin`
-Password: (from the Kubernetes Secret)
-
----
-
-🎯 Once inside, you can:
-
-Add Inventories
-Configure Credentials
-Launch and Monitor Ansible Jobs
-
----
-
-💡 Don’t forget to configure *persistent backups**, **external databases**, and **Git/Vault integrations* for production setups!
-
----
-
-👍 If you found this tutorial helpful, please *Like**, **Subscribe**, and hit the **🔔 bell icon* for more DevOps and Linux tutorials.
-
-💬 Drop a comment if you'd like a follow-up video on AWX Projects, Inventories, or Job Templates!
-
-#AnsibleAWX​ #Kubernetes​ #DevOps​ #AnsibleTower​ #AWX​ #LinuxTutorial​ #Helm​ #OpenSource​ #Automation​ #RedHatAnsible​
