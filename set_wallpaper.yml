@@ -4,7 +4,7 @@
   become: yes
 
   vars:
-    wallpaper_source: "kali.png"       # Path inside in our Ansible project
+    wallpaper_source: "kali-pic.png"       # Path inside in our Ansible project
     wallpaper_dest: "/usr/share/backgrounds/kali_wallpaper.png"
     dconf_dir: "/etc/dconf/db/local.d"
     dconf_file: "00-wallpaper"
