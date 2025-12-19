@@ -80,4 +80,6 @@
         mode: '0644'
 
     - name: Update dconf database
+      become: yes
+      become_user: root
       command: dconf update
