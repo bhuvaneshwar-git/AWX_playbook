@@ -210,3 +210,11 @@ spec:
 
 kubectl apply -f ansible-awx.yaml
 
+
+
+
+------------------------------------------------
+
+college project Documentation -
+https://github.com/ParrotSec/docker-images/tree/master
+https://parrot.run/
