@@ -59,6 +59,7 @@
           [org/gnome/desktop/background]
           picture-uri='file://{{ wallpaper_dest }}'
           picture-uri-dark='file://{{ wallpaper_dest }}'
+          picture-options='centered'
 
           [org/gnome/desktop/screensaver]
           picture-uri='file://{{ wallpaper_dest }}'
