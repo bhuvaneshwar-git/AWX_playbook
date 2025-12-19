@@ -4,8 +4,8 @@
   become: yes
 
   vars:
-    wallpaper_source: "wallpaper.png"
-    wallpaper_dest: "/usr/share/backgrounds/Flattrade_wallpaper.png"
+    wallpaper_source: "wallpaper.png" 
+    wallpaper_dest: "/usr/share/backgrounds/wallpaper.png"
     dconf_profile: "/etc/dconf/profile/user"
     dconf_db_dir: "/etc/dconf/db/local.d"
     dconf_lock_dir: "/etc/dconf/db/local.d/locks"
