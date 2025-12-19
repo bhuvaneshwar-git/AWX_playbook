@@ -51,6 +51,8 @@
         mode: '0644'
 
     - name: Set GNOME wallpaper defaults
+      become: yes
+      become_user: root
       copy:
         dest: "{{ dconf_db_dir }}/00-wallpaper"
         content: |
