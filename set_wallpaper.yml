@@ -71,13 +71,11 @@
     # -------------------------
     - name: Ensure dconf user profile exists
       ansible.builtin.copy:
-        dest: /etc/dconf/profile/user
-        content: |
-          user-db:user
-          system-db:local
+        dest: /etc/dconf/db/local.d
+        state: directory
         owner: root
         group: root
-        mode: '0644'
+        mode: '0755'
 
 
 
