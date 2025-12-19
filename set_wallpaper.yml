@@ -39,6 +39,8 @@
         - "{{ dconf_lock_dir }}"
 
     - name: Configure dconf user profile
+      become: yes
+      become_user: root
       copy:
         dest: "{{ dconf_profile }}"
         content: |
