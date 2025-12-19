@@ -20,13 +20,13 @@
 
     # ✅ FIXED COPY TASK (AWX SAFE)
     - name: Copy corporate wallpaper
+      become: yes
       copy:
         src: "{{ wallpaper_source }}"
         dest: "{{ wallpaper_dest }}"
         owner: root
         group: root
         mode: '0644'
-        become: yes
 
     - name: Ensure dconf directories exist
       file:
