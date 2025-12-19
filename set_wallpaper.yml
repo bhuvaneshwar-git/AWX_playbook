@@ -21,6 +21,7 @@
     # ✅ FIXED COPY TASK (AWX SAFE)
     - name: Copy corporate wallpaper
       become: yes
+      become_user: root
       copy:
         src: "{{ wallpaper_source }}"
         dest: "{{ wallpaper_dest }}"
