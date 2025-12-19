@@ -1,6 +1,6 @@
 ---
 - name: Set and lock GNOME wallpaper system-wide (Enterprise-Safe)
-  hosts: ubuntu_nodes
+  hosts: all
   become: yes
 
   vars:
