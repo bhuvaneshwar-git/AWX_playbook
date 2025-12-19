@@ -46,8 +46,8 @@
         dest: "{{ dconf_dir }}/{{ dconf_file }}"
         content: |
           [org/gnome/desktop/background]
-          picture-uri='file://{{ wallpaper_dest }}'
-          picture-uri-dark='file://{{ wallpaper_dest }}'
+          picture-uri='file:///{{ wallpaper_dest }}'
+          picture-uri-dark='file:///{{ wallpaper_dest }}'
           picture-options='centered'
         owner: root
         group: root
@@ -69,10 +69,16 @@
     # -------------------------
     # 5. Update dconf database to apply system defaults
     # -------------------------
-    - name: Update dconf database
-      ansible.builtin.command: dconf update
-      become: yes
-      become_user: root
+    - name: Ensure dconf user profile exists
+      ansible.builtin.copy:
+        dest: /etc/dconf/profile/user
+        content: |
+          user-db:user
+          system-db:local
+        owner: root
+        group: root
+        mode: '0644'
+
 
 
     # -------------------------
