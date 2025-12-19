@@ -67,6 +67,8 @@
         mode: '0644'
 
     - name: Lock wallpaper settings
+      become: yes
+      become_user: root
       copy:
         dest: "{{ dconf_lock_dir }}/wallpaper"
         content: |
