@@ -1,0 +1,38 @@
+Active Directory (AD)
+│
+├── Active Directory Domain Services (AD DS)
+│   ├── Domain Controllers (DC)
+│   │   └── AD Database (NTDS.dit)
+│   ├── Domain
+│   │   └── Organizational Units (OUs)
+│   ├── Objects
+│   │   ├── Users
+│   │   ├── Groups
+│   │   ├── Computers
+│   │   ├── Printers
+│   │   └── Shared Folders
+│   ├── Authentication & Authorization
+│   │   ├── User Authentication (Login Process)
+│   │   └── Access Control (Permissions)
+│   ├── Replication
+│   │   ├── Between Domain Controllers
+│   │   └── Global Catalog (GC)
+│   ├── Group Policy Management
+│   │   └── Group Policy Objects (GPOs)
+│   ├── LDAP Support
+│   │   └── Querying & Modifying Directory
+│   ├── FSMO Roles (Flexible Single Master Operations)
+│   │   ├── Schema Master
+│   │   ├── Domain Naming Master
+│   │   ├── PDC Emulator
+│   │   ├── RID Master
+│   │   └── Infrastructure Master
+│   └── Security (Access Control)
+│       ├── Permissions
+│       └── Trusts (Cross-Domain)
+│
+└── Other AD Services (Optional Extensions)
+    ├── AD Certificate Services (AD CS)
+    ├── AD Federation Services (AD FS)
+    └── AD Lightweight Directory Services (AD LDS)
+

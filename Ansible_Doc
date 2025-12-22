@@ -1,0 +1,33 @@
+Date - 12/10/2025
+
+Steps for Policy implementation
+
+Install ansible tool 
+step 1 - sudo apt update
+	 sudo apt install ansible -y
+	 
+Setup SSH Access to Clients
+step 2 - ssh-keygen -t rsa -b 4096
+step 3 - create a host.ini ( 192.168.2.111 ansible_user=testuser2 )
+ 
+script - 
+'''
+for host in $(cat hosts.ini | grep -v '^\['); do
+  ssh-copy-id user@$host
+done
+'''
+
+test the connectivity - ansible -i hosts.ini ubuntu_servers -m ping
+
+step 4 - ssh-copy-id ssh-copy-id testuser2@192.168.2.111
+
+create a playbook 
+step 5 - ansible-playbook wallpaper_lock.yml
+
+Run the playbook - ansible-playbook -i hosts.ini set_wallpaper.yml
+
+
+removing the playbook from host machine - 
+sudo rm -f /etc/dconf/profile/user
+sudo dconf update
+
