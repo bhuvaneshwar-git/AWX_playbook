@@ -1,5 +1,6 @@
 <img src="https://raw.githubusercontent.com/ansible/awx-logos/master/awx/ui/client/assets/logo-login.svg?sanitize=true" width=200 alt="AWX" />
 
+Detailed documentation - [Documentation](https://bhuvaneshwar-git.github.io/posts/ansible/)
 # AWX playbook
 
 This repository contains automation playbooks executed and managed using **AWX (Ansible Tower)** for Linux system administration tasks.
